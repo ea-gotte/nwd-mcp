@@ -29,7 +29,7 @@
 - **安全优先：** 每会话随机加密 token 校验、TCP 传输仅绑定 loopback，以及对返回给模型的错误消息中的绝对文件路径进行净化。
 - **多实例路由：** 自动检测多个正在运行的 Navisworks Manage 实例，并支持动态切换目标。
 
-Navisworks 为 MCP 命令显示一张活动卡片。提示默认开启，在最新结果之后停留 20 秒（可选 10、20、30 或 60）。悬停暂停；离开后重新计满该间隔。BIMwright 字标默认关闭，需打开 Show branding 才会出现。`nwd_health_check` 不会进入卡片。**Bimwright** 功能区有 **Toasts**、**Toast Brand**、**Record** 和 **Status**。**Record** 在打开之前保持关闭；打开后，每次工具调用都会追加到 `%LOCALAPPDATA%\Bimwright\nwd-mcp\mcp-calls.jsonl`。`send_code` 只保存长度和 SHA-256，不保存脚本。设置写在 `%LOCALAPPDATA%\Bimwright\nwd-mcp\nwdmcp.config.json`。`BIMWRIGHT_NWD_ENABLE_TOAST` 和 `BIMWRIGHT_NWD_RECORD_CALLS` 在下次启动时覆盖对应开关。
+Navisworks 为 MCP 命令显示一张活动卡片。提示默认开启，在最新结果之后停留 20 秒（可选 10、20、30 或 60）。悬停暂停；离开后重新计满该间隔。有意悬停会平滑展开当前卡片的紧凑三行结果视口，每项均有独立边框（工具、结果、成功／失败，以及本地完成时间，采用24小时制 `HH:mm:ss`）。保留该卡片内的所有结果，旧调用在上、新调用在下；初始显示最新三次调用，通过与RVT一致的细滚动条向上滚动可查看更早的调用。移开后平滑收起。新结果会立即追加：位于底部时自动跟随最新调用，向上阅读旧调用时保持滚动位置；回到底部后恢复自动跟随。关闭 branding 也能使用，并遵循减少动态效果设置。有长度上限的摘要仅保留在内存中，关闭或重置卡片时丢弃，不会开启 Record，也不保存原始请求、结果 JSON 或脚本源代码。BIMwright 字标默认关闭，需打开 Show branding 才会出现。`nwd_health_check` 不会进入卡片。**Bimwright** 功能区有 **Toasts**、**Toast Brand**、**Record** 和 **Status**。**Record** 在打开之前保持关闭；打开后，每次工具调用都会追加到 `%LOCALAPPDATA%\Bimwright\nwd-mcp\mcp-calls.jsonl`。`send_code` 只保存长度和 SHA-256，不保存脚本。设置写在 `%LOCALAPPDATA%\Bimwright\nwd-mcp\nwdmcp.config.json`。`BIMWRIGHT_NWD_ENABLE_TOAST` 和 `BIMWRIGHT_NWD_RECORD_CALLS` 在下次启动时覆盖对应开关。
 
 ---
 

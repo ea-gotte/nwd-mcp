@@ -28,5 +28,6 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         /// <summary>Optional local image path for thumbnail preview (capture/export).</summary>
         public string ThumbnailPath { get; set; }
         public bool Success { get; set; }
+        public long? DurationMs { get; set; }
     }
 }

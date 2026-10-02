@@ -28,7 +28,7 @@
 - **セキュリティ第一:** セッションごとのランダム暗号トークン検証、TCP トランスポートのループバック専用バインド、モデルに返されるエラーメッセージにおける絶対ファイルパスのサニタイズ。
 - **マルチインスタンスルーティング:** 実行中の複数の Navisworks Manage インスタンスを自動検出し、動的なターゲット切り替えをサポートします。
 
-Navisworks は MCP コマンドごとに 1 枚のアクティビティカードを表示します。トーストは既定でオンで、直近の結果から 20 秒残ります（10 / 20 / 30 / 60）。ホバーで一時停止し、離れると間隔を最初から数え直します。BIMwright のワードマークは Show branding をオンにするまで出ません。`nwd_health_check` はカードに出ません。リボンの **Bimwright** タブに **Toasts**、**Toast Brand**、**Record**、**Status** があります。**Record** はオンにするまでオフです。オンにすると、すべてのツール呼び出しを `%LOCALAPPDATA%\Bimwright\nwd-mcp\mcp-calls.jsonl` に追記します。`send_code` はソースではなく長さと SHA-256 を保存します。設定は `%LOCALAPPDATA%\Bimwright\nwd-mcp\nwdmcp.config.json` です。`BIMWRIGHT_NWD_ENABLE_TOAST` と `BIMWRIGHT_NWD_RECORD_CALLS` は次回起動時にそれぞれのスイッチを上書きします。
+Navisworks は MCP コマンドごとに 1 枚のアクティビティカードを表示します。トーストは既定でオンで、直近の結果から 20 秒残ります（10 / 20 / 30 / 60）。ホバーで一時停止し、離れると間隔を最初から数え直します。意図的にホバーすると、現在のカードの結果を、各項目に枠線を付けたコンパクトな3行の表示領域に滑らかに展開します（ツール、結果、成功／失敗、ローカルの完了時刻を24時間形式 `HH:mm:ss` で表示）。カード内の全件を古い順に保持し、最初は下端の最新3件を表示します。RVTと同じ細いスクロールバーで上にスクロールすると過去の呼び出しを確認できます。離れると滑らかに折りたたまれます。新しい結果はすぐに追加され、下端を見ている場合は最新の呼び出しに追従します。過去の呼び出しを読んでいる場合はスクロール位置を保ち、下端に戻ると追従を再開します。branding がオフでも使え、動きを減らす設定にも対応します。長さを制限した要約はメモリ内だけに保持し、カードを閉じるかリセットすると破棄します。Record は有効にせず、生のリクエスト、結果JSON、スクリプトソースは保持しません。BIMwright のワードマークは Show branding をオンにするまで出ません。`nwd_health_check` はカードに出ません。リボンの **Bimwright** タブに **Toasts**、**Toast Brand**、**Record**、**Status** があります。**Record** はオンにするまでオフです。オンにすると、すべてのツール呼び出しを `%LOCALAPPDATA%\Bimwright\nwd-mcp\mcp-calls.jsonl` に追記します。`send_code` はソースではなく長さと SHA-256 を保存します。設定は `%LOCALAPPDATA%\Bimwright\nwd-mcp\nwdmcp.config.json` です。`BIMWRIGHT_NWD_ENABLE_TOAST` と `BIMWRIGHT_NWD_RECORD_CALLS` は次回起動時にそれぞれのスイッチを上書きします。
 
 ---
 

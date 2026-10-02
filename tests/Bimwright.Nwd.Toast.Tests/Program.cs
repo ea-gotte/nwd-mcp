@@ -14,11 +14,27 @@ internal static class Program
     {
         try
         {
+            if (args.Length > 0 && args[0] == "--thumbnail-motion")
+            {
+                ToastVisualTests.CheckThumbnailMotion();
+                return 0;
+            }
+            if (args.Length > 0 && args[0] == "--live-tail")
+            {
+                LiveTailVisualTests.Run();
+                return 0;
+            }
+            if (args.Length > 0 && args[0] == "--preview")
+                return ToastPreview.Run();
+            if (args.Length == 2 && args[0] == "--capture")
+                return ToastPreview.Capture(args[1]);
             CheckCardWidthAndFailureAccent();
             CheckCompactBody();
             CheckCloseHover();
             CheckCompactLayout();
             ToastVisualTests.Run();
+            RecentActivityVisualTests.Run();
+            LiveTailVisualTests.Run();
             CheckNaNSafePlacement();
             CheckBrandingFollowsPreference();
             CheckIdentityRow();
@@ -118,7 +134,7 @@ internal static class Program
             {
                 var root = (Border)window.Content;
                 var grid = (Grid)root.Child;
-                if (grid.RowDefinitions.Count != 5 || grid.Children.Count != 5)
+                if (grid.RowDefinitions.Count != 6 || grid.Children.Count != 6)
                     throw new Exception("Expected the stable activity card layout.");
                 var header = (DockPanel)grid.Children[0];
                 var hasProductHeader = false;
@@ -136,13 +152,16 @@ internal static class Program
                     throw new Exception("The line under the title must name the latest tool.");
                 var bodyGrid = (Grid)grid.Children[2];
                 var counterRow = (Viewbox)bodyGrid.Children[0];
-                if (counterRow.Visibility != Visibility.Visible || (string)counterRow.ToolTip != body
+                if (counterRow.Visibility != Visibility.Visible || counterRow.ToolTip != null
                     || bodyGrid.Children[1].Visibility != Visibility.Collapsed)
-                    throw new Exception("Activity must show counters, with its last summary only in the tooltip.");
-                var thumbnail = (Border)grid.Children[3];
+                    throw new Exception("Compact activity must show counters without an automatic outcome tooltip.");
+                var details = (Border)grid.Children[3];
+                if (details.Visibility != Visibility.Collapsed || details.Height != 0)
+                    throw new Exception("Recent outcomes must not reserve space before a deliberate hover.");
+                var thumbnail = (Border)grid.Children[4];
                 if (thumbnail.Visibility != Visibility.Collapsed)
                     throw new Exception("Thumbnail row must stay collapsed without a capture.");
-                var footer = (Grid)grid.Children[4];
+                var footer = (Grid)grid.Children[5];
                 if (((Grid)footer.Children[0]).HorizontalAlignment != HorizontalAlignment.Right)
                     throw new Exception("Brand must align right independently of footer fill.");
                 root.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));

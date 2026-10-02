@@ -60,7 +60,7 @@ namespace Bimwright.Nwd.Shared.Views.Toast
                 toolDescription);
 
             var imagePath = ToastContentBuilder.IsSafeImagePath(vm.ThumbnailPath) ? vm.ThumbnailPath : null;
-            Record(vm.Title, vm.Body, vm.Success, vm.Success && imagePath != null, imagePath);
+            Record(vm.Title, vm.Body, vm.Success, vm.Success && imagePath != null, imagePath, vm.DurationMs);
         }
 
         /// <summary>One-shot connection confirmation. Does not cover an open activity card.</summary>
@@ -129,9 +129,9 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             _host.Shutdown();
         }
 
-        private void Record(string title, string body, bool success, bool hasImage, string imagePath)
+        private void Record(string title, string body, bool success, bool hasImage, string imagePath, long? durationMs)
         {
-            if (_activity.RecordResult(title, body, success, hasImage, IsOwnerFrameUsable(), imagePath))
+            if (_activity.RecordResult(title, body, success, hasImage, IsOwnerFrameUsable(), imagePath, durationMs))
                 _host.Post(manager => manager.Render());
         }
 

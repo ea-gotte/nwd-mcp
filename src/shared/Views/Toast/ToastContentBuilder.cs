@@ -23,29 +23,45 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             if (string.IsNullOrEmpty(toolName))
                 toolName = "unknown";
 
-            var payload = UnwrapEnvelope(resultJson, ref errorMessage);
+            var payload = UnwrapEnvelope(resultJson, ref success, ref errorMessage, out var durationMs);
+            // Script/macro failures may live inside an outer successful transport result.
+            var data = payload as JObject;
+            if (success && data?["ok"] is JValue innerOk
+                && innerOk.Type == Newtonsoft.Json.Linq.JTokenType.Boolean && !(bool)innerOk)
+            {
+                success = false;
+                errorMessage = Preview(data["error"]) ?? L.T("toast.failed.default");
+            }
             var content = success
                 ? BuildSuccessContent(toolName, payload)
                 : BuildFailureContent(toolName, errorMessage, toolDescription);
 
             return new McpToastViewModel
             {
-                Title = ToolNameFormatter.Format(toolName),
-                Summary = content.Summary,
-                Detail = content.Detail,
+                Title = ToastActivityEntry.Compact(ToolNameFormatter.Format(toolName), ToastActivityEntry.TitleLimit),
+                Summary = ToastActivityEntry.Compact(content.Summary, ToastActivityEntry.BodyLimit),
+                Detail = ToastActivityEntry.Compact(content.Detail, 100),
                 ThumbnailPath = content.ThumbnailPath,
-                Success = success
+                Success = success,
+                DurationMs = durationMs
             };
         }
 
-        private static JToken UnwrapEnvelope(string resultJson, ref string errorMessage)
+        private static JToken UnwrapEnvelope(string resultJson, ref bool success, ref string errorMessage,
+            out long? durationMs)
         {
+            durationMs = null;
             JToken result = null;
             try { if (!string.IsNullOrEmpty(resultJson)) result = JToken.Parse(resultJson); } catch { }
 
             var obj = result as JObject;
             if (obj == null || obj["ok"] == null)
                 return result;
+
+            if (obj["ok"] is JValue ok && ok.Type == JTokenType.Boolean && !(bool)ok)
+                success = false;
+            if (obj["meta"]?["duration_ms"] is JValue elapsed && elapsed.Type == JTokenType.Integer)
+                durationMs = Math.Max(0, elapsed.Value<long>());
 
             var err = obj["error"] as JObject;
             if (err != null && string.IsNullOrWhiteSpace(errorMessage))
@@ -65,6 +81,23 @@ namespace Bimwright.Nwd.Shared.Views.Toast
                     return BuildDocumentInfo(resultObj);
                 case "send_code":
                     return BuildSendCodeSuccess(resultObj);
+                case "hide_items":
+                    var hidden = resultObj?.Value<int?>("hidden_count");
+                    if (hidden.HasValue)
+                        return new ToastContent(L.T(resultObj.Value<bool?>("hide") == false
+                            ? "toast.items.shown" : "toast.items.hidden", ("count", hidden.Value)), null);
+                    return BuildGenericSuccess(toolName, result);
+                case "select_items_by_search":
+                    var selected = resultObj?.Value<int?>("selected_count");
+                    return selected.HasValue
+                        ? new ToastContent(L.T("toast.items.selected", ("count", selected.Value)), null)
+                        : BuildGenericSuccess(toolName, result);
+                case "execute_search_set":
+                    var matched = resultObj?.Value<int?>("matched_count");
+                    return matched.HasValue
+                        ? new ToastContent(L.T(resultObj.Value<bool?>("selected") == true
+                            ? "toast.items.selected" : "toast.items.matched", ("count", matched.Value)), null)
+                        : BuildGenericSuccess(toolName, result);
                 default:
                     return BuildGenericSuccess(toolName, result);
             }
@@ -95,13 +128,10 @@ namespace Bimwright.Nwd.Shared.Views.Toast
 
         private static ToastContent BuildSendCodeSuccess(JObject result)
         {
-            // send_code reports compile and runtime faults inside a successful envelope.
-            var innerOk = result?.Value<bool?>("ok");
-            var innerError = result?.Value<string>("error");
-            if (innerOk == false && !string.IsNullOrWhiteSpace(innerError))
-                return new ToastContent(Truncate(FirstLine(innerError), 100), L.T("toast.sendCode.detail"));
-
-            var text = result?.Value<string>("stdout") ?? result?.Value<string>("result");
+            // Never stringify arbitrary script objects or retain the source request.
+            var text = Preview(result?["stdout"]);
+            if (string.IsNullOrWhiteSpace(text))
+                text = Preview(result?["result"]);
             var summary = string.IsNullOrWhiteSpace(text)
                 ? L.T("toast.sendCode.finished")
                 : Truncate(FirstLine(text), 100);
@@ -181,6 +211,17 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             }
         }
 
+        private static string Preview(JToken token)
+        {
+            if (token is JArray array)
+                return L.T("toast.generic.items", ("count", array.Count));
+            if (token is JObject obj)
+                return L.T("toast.generic.fields", ("count", obj.Count));
+            if (token is JValue value && value.Type != JTokenType.Null)
+                return Truncate(FirstLine(Convert.ToString(value.Value, System.Globalization.CultureInfo.InvariantCulture)), 120);
+            return null;
+        }
+
         private static string FirstLine(string text)
         {
             if (string.IsNullOrEmpty(text))
@@ -189,12 +230,7 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             return idx < 0 ? text : text.Substring(0, idx);
         }
 
-        private static string Truncate(string text, int max)
-        {
-            if (string.IsNullOrEmpty(text) || text.Length <= max)
-                return text ?? string.Empty;
-            return text.Substring(0, max - 3) + "...";
-        }
+        private static string Truncate(string text, int max) => ToastActivityEntry.Compact(text, max);
 
         private readonly struct ToastContent
         {

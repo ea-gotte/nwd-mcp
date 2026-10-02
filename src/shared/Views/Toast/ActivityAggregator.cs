@@ -1,5 +1,6 @@
 #nullable disable
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Bimwright.Nwd.Shared.Views.Toast
@@ -9,7 +10,8 @@ namespace Bimwright.Nwd.Shared.Views.Toast
     {
         public ActivitySnapshot(long cardId, bool isStatus, int succeeded, int failed, int images,
             string title, string body, bool latestSuccess, bool hasFailure,
-            Func<ActivityStatusText> statusTextProvider = null, string imagePath = null)
+            Func<ActivityStatusText> statusTextProvider = null, string imagePath = null,
+            IReadOnlyList<ToastActivityEntry> recentEntries = null)
         {
             CardId = cardId;
             IsStatus = isStatus;
@@ -22,6 +24,7 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             HasFailure = hasFailure;
             StatusTextProvider = statusTextProvider;
             ImagePath = imagePath;
+            RecentEntries = ToastActivityLog.Freeze(recentEntries);
         }
 
         /// <summary>Never reused — a window callback carrying an old id is ignored.</summary>
@@ -47,6 +50,8 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         /// least <see cref="ActivityAggregator.ThumbnailHoldSeconds"/>; after that the newest
         /// result decides (its own capture, or none).</summary>
         public string ImagePath { get; }
+        /// <summary>All compact outcomes in this card, oldest first; the preview scrolls to the latest.</summary>
+        public IReadOnlyList<ToastActivityEntry> RecentEntries { get; }
     }
 
     /// <summary>Localized title/body for a status card, resolved at render time.</summary>
@@ -97,6 +102,8 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         private readonly object _gate = new object();
         private readonly Func<int> _idleSeconds;
         private readonly Func<TimeSpan> _now;
+        private readonly ToastActivityLog _recentEntries = new ToastActivityLog();
+        private readonly Func<DateTimeOffset> _wallClock;
 
         private Phase _phase;
         private long _cardId;
@@ -124,8 +131,10 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         /// <param name="idleSeconds">Read each time the deadline is set, so a changed setting
         /// applies from the next re-arm. Called under the lock — must be cheap.</param>
         /// <param name="now">Monotonic clock; defaults to a Stopwatch.</param>
-        public ActivityAggregator(Func<int> idleSeconds = null, Func<TimeSpan> now = null)
+        public ActivityAggregator(Func<int> idleSeconds = null, Func<TimeSpan> now = null,
+            Func<DateTimeOffset> wallClock = null)
         {
+            _wallClock = wallClock ?? (() => DateTimeOffset.Now);
             _idleSeconds = idleSeconds ?? (() => DefaultIdleSeconds);
             if (now == null)
             {
@@ -140,8 +149,10 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             get { lock (_gate) return _phase == Phase.Pending; }
         }
 
-        public bool RecordResult(string title, string body, bool success, bool hasImage, bool frameUsable, string imagePath = null)
+        public bool RecordResult(string title, string body, bool success, bool hasImage, bool frameUsable,
+            string imagePath = null, long? durationMs = null)
         {
+            var entry = new ToastActivityEntry(title, body, success, durationMs, _wallClock());
             lock (_gate)
             {
                 var activityOpen = !_isStatus && (_phase == Phase.Visible || _phase == Phase.Pending);
@@ -161,9 +172,10 @@ namespace Bimwright.Nwd.Shared.Views.Toast
                     _failed++;
                     _hasFailure = true;
                 }
-                _title = title;
-                _body = body;
+                _title = entry.Title;
+                _body = entry.Body;
                 _latestSuccess = success;
+                _recentEntries.Add(entry);
 
                 // A result can arrive after the owner became minimized/disabled but
                 // before the manager's next timer tick. Park the visible card now so
@@ -206,6 +218,7 @@ namespace Bimwright.Nwd.Shared.Views.Toast
                 if (_phase == Phase.None)
                     return false;
                 _phase = Phase.None;
+                ClearRecentContent();
                 return RequestRender();
             }
         }
@@ -309,7 +322,10 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             lock (_gate)
             {
                 if (cardId == _cardId && (_phase == Phase.Visible || _phase == Phase.Closing))
+                {
                     _phase = Phase.None;
+                    ClearRecentContent();
+                }
             }
         }
 
@@ -345,6 +361,7 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             _succeeded = 0;
             _failed = 0;
             _images = 0;
+            _recentEntries.Clear();
             _title = null;
             _body = null;
             _imagePath = null;
@@ -354,6 +371,13 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             _hasFailure = false;
             _statusTextProvider = null;
             _hovering = false;
+        }
+
+        private void ClearRecentContent()
+        {
+            _recentEntries.Clear();
+            _title = null;
+            _body = null;
         }
 
         private void Rearm()
@@ -408,6 +432,6 @@ namespace Bimwright.Nwd.Shared.Views.Toast
 
         private ActivitySnapshot Snapshot() => new ActivitySnapshot(
             _cardId, _isStatus, _succeeded, _failed, _images, _title, _body, _latestSuccess, _hasFailure,
-            _statusTextProvider, _imagePath);
+            _statusTextProvider, _imagePath, _recentEntries.Snapshot());
     }
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Deliberate-hover activity preview: all outcomes in the current toast card, with tool name, compact result, success/failure and local 24-hour completion time (`HH:mm:ss`). Starts at the newest three compact, individually bordered cards; each shows a title/time line and one ellipsized result line, with the full bounded result in its tooltip. Scroll up through older calls using the thin RVT-style scrollbar. No scroll/refresh instruction footer. Virtualized rows and immutable indexed snapshots keep a growing card compact. Expands with height/fade/slide easing after a 200 ms intent delay and collapses after a short leave grace period. Incoming results append immediately while hovered: follow the latest at the bottom, preserve the scroll position while reading older calls, and resume following when returning to the bottom. A new hover after full collapse starts at the latest; interrupted collapse preserves reading position. One/two-call cards grow without clipping new rows. Independent of branding, reduced-motion aware, no focus stealing or additional call-log persistence. Summaries have bounded text lengths and redact credentials/full paths; raw requests, result JSON and script source are not retained.
+
+### Fixed
+- Script failures inside a successful transport envelope now count as Failed instead of Success in the activity card.
+- Hide/show, selection and search-set results describe the actual outcome instead of a generic completion. Empty script stdout no longer hides a real result; object/array script results use a bounded summary rather than their raw contents.
+
 ## v1.0.0 - 2026-09-30
 
 Client setup ZIP: `NwdMcp.Setup-v1.0.0-win-x64.zip` (self-contained `nwd-mcp.exe`). **Plugin year in this ZIP:** Navisworks Manage **2025**. Source still supports 2022–2027. NuGet `Bimwright.Nwd.Server` 1.0.0 is server-only (no plug-in).

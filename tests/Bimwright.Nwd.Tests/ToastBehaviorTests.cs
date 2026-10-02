@@ -171,7 +171,7 @@ public sealed class ToastContentBuilderTests
 
         var vm = ToastContentBuilder.BuildCompleted("send_code", json, true, null, null);
         Assert.Contains("compile error: boom", vm.Summary);
-        Assert.Equal("Custom C# executed in Navisworks", vm.Detail);
+        Assert.False(vm.Success); // A visible script error must also increment Failed, not Success.
     }
 }
 

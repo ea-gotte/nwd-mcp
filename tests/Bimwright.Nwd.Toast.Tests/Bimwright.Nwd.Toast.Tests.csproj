@@ -4,11 +4,15 @@
     <TargetFramework>net48</TargetFramework>
     <UseWPF>true</UseWPF>
     <LangVersion>latest</LangVersion>
-    <Nullable>disable</Nullable>
+    <Nullable>annotations</Nullable>
     <RootNamespace>Bimwright.Nwd.Toast.Tests</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\src\shared\Views\Toast\ActivityAggregator.cs" Link="ActivityAggregator.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastActivityEntry.cs" Link="ToastActivityEntry.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastActivityLog.cs" Link="ToastActivityLog.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastScrollBarStyles.cs" Link="ToastScrollBarStyles.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastActivityPanel.cs" Link="ToastActivityPanel.cs" />
     <Compile Include="..\..\src\shared\Views\Toast\McpToastWindow.cs" Link="McpToastWindow.cs" />
     <Compile Include="..\..\src\shared\Views\Toast\RollingToastNumber.cs" Link="RollingToastNumber.cs" />
     <Compile Include="..\..\src\shared\Views\Toast\McpToastManager.cs" Link="McpToastManager.cs" />
@@ -18,6 +22,7 @@
     <Compile Include="..\..\src\shared\Views\Toast\ToastThumbnailLoader.cs" Link="ToastThumbnailLoader.cs" />
     <Compile Include="..\..\src\shared\Views\Toast\ToolNameFormatter.cs" Link="ToolNameFormatter.cs" />
     <Compile Include="..\..\src\shared\Security\PathAllowlist.cs" Link="PathAllowlist.cs" />
+    <Compile Include="..\..\src\shared\Security\SecretMasker.cs" Link="SecretMasker.cs" />
     <Compile Include="..\..\src\shared\Views\BrandAssets.cs" Link="BrandAssets.cs" />
     <Compile Include="..\..\src\shared\Localization\L.cs" Link="Localization\L.cs" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
