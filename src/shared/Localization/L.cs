@@ -13,6 +13,7 @@ public static class L
 {
     private static readonly Dictionary<string, string> En = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["settings.toast.idle.saveFailed"] = "Toast duration could not be saved. The previous duration is still active. Try Apply again.",
         ["toast.connected.title"] = "Agent connected",
         ["toast.connected.summary"] = "nwd-mcp is ready",
         ["toast.failed.default"] = "Tool call failed",

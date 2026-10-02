@@ -14,6 +14,7 @@ internal sealed class NwdToastStatusWindow : Window
     private readonly CheckBox _showBranding;
     private readonly CheckBox _recordCalls;
     private readonly ComboBox _idle;
+    private readonly TextBlock _idleError;
     private readonly ComboBox _horizontal;
     private readonly ComboBox _vertical;
     private readonly CheckBox _dragEnabled;
@@ -40,6 +41,9 @@ internal sealed class NwdToastStatusWindow : Window
         _showBranding = new CheckBox { Content = L.T("settings.toast.brand"), Margin = new Thickness(0, 8, 0, 4) };
         _recordCalls = new CheckBox { Content = L.T("settings.record"), Margin = new Thickness(0, 8, 0, 4) };
         _idle = new ComboBox { Margin = new Thickness(0, 4, 0, 8), IsEditable = false };
+        _idleError = Help(string.Empty);
+        _idleError.Foreground = System.Windows.Media.Brushes.Firebrick;
+        _idleError.Visibility = Visibility.Collapsed;
         foreach (var seconds in PluginSettings.ToastIdleChoices)
         {
             var item = new ComboBoxItem
@@ -83,6 +87,7 @@ internal sealed class NwdToastStatusWindow : Window
         root.Children.Add(Help(L.T("settings.record.help")));
         root.Children.Add(new TextBlock { Text = L.T("settings.toast.idle"), Margin = new Thickness(0, 8, 0, 0) });
         root.Children.Add(_idle);
+        root.Children.Add(_idleError);
         root.Children.Add(Help(L.T("settings.toast.idle.help")));
         root.Children.Add(new TextBlock { Text = L.T("settings.toast.horizontal"), Margin = new Thickness(0, 8, 0, 0) });
         root.Children.Add(_horizontal);
@@ -219,7 +224,13 @@ internal sealed class NwdToastStatusWindow : Window
     {
         var seconds = SelectedIdle();
         if (!PluginSettings.SaveToastIdleSeconds(seconds))
+        {
+            _idleError.Text = L.T("settings.toast.idle.saveFailed");
+            _idleError.Visibility = Visibility.Visible;
             return;
+        }
+        _idleError.Text = string.Empty;
+        _idleError.Visibility = Visibility.Collapsed;
         _savedIdle = PluginSettings.NormalizeToastIdleSeconds(seconds);
         NwdActivityToast.SetIdleSeconds(_savedIdle);
         SyncApply();

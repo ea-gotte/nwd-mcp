@@ -6,9 +6,12 @@ Toast settings provide independent horizontal/vertical corners, optional title-r
 
 ## Automated verification
 
+The Status window reports a failed toast-duration save without changing the active duration. Apply remains available for retry; a successful retry clears the error and applies the saved duration.
+
 ```powershell
 dotnet test tests/Bimwright.Nwd.Tests/Bimwright.Nwd.Tests.csproj
 dotnet run --project tests/Bimwright.Nwd.Toast.Tests/Bimwright.Nwd.Toast.Tests.csproj
+dotnet run --project tests/Bimwright.Nwd.Toast.Tests/Bimwright.Nwd.Toast.Tests.csproj -- --settings
 ```
 
 Use `-- --history` to run only the notifier, card-click and History lifecycle check. The WPF executable checks hover/collapse, live arrivals, scrolling, reduced motion, four corners, dragging/reset and History. These checks exercise the Windows UI but do not establish live acceptance inside each Navisworks release. Build and live checks require the matching installed Autodesk SDK/application.

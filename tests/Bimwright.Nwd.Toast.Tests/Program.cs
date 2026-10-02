@@ -14,6 +14,11 @@ internal static class Program
     {
         try
         {
+            if (args.Length > 0 && args[0] == "--settings")
+            {
+                StatusVisualTests.Run();
+                return 0;
+            }
             if (args.Length > 0 && args[0] == "--history")
             {
                 HistoryVisualTests.Run();
@@ -56,6 +61,7 @@ internal static class Program
             CheckSingleActivityCard();
             CheckStatusAndClickLifecycle();
             HistoryVisualTests.Run();
+            StatusVisualTests.Run();
             Console.WriteLine("PASS: single-card activity manager and WPF guards");
             return 0;
         }
