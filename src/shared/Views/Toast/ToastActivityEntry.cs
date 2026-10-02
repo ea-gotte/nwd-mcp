@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Bimwright.Nwd.Shared.Security;
+using Bimwright.Nwd.Shared.Localization;
 
 namespace Bimwright.Nwd.Shared.Views.Toast
 {
@@ -39,6 +40,20 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         /// <summary>Captured when this outcome is recorded, never when the user hovers.</summary>
         public DateTimeOffset CompletedAt { get; }
         public string LocalTimeText => CompletedAt.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+
+        /// <summary>Hover copy uses only the bounded, sanitized outcome, never the wire payload.</summary>
+        public string TooltipText
+        {
+            get
+            {
+                var status = L.T(Success ? "toast.activity.success" : "toast.activity.failed");
+                var duration = DurationMs.HasValue
+                    ? " · " + DurationMs.Value.ToString(CultureInfo.CurrentCulture) + " ms"
+                    : string.Empty;
+                return Title + (string.IsNullOrEmpty(Body) ? string.Empty : "\n" + Body)
+                    + "\n" + status + " · " + LocalTimeText + duration;
+            }
+        }
 
         internal static string Compact(string value, int limit)
         {

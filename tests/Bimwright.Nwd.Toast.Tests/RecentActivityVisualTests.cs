@@ -259,7 +259,7 @@ internal static class RecentActivityVisualTests
                     var card = VisualChildren<Border>(container).Single(b =>
                         System.Windows.Automation.AutomationProperties.GetName(b) == entries[i].Title);
                     if (card.BorderThickness != new Thickness(1) || card.CornerRadius != new CornerRadius(4)
-                        || card.ActualHeight > 38.1 || card.Margin != new Thickness(0, 0, 0, 4)
+                        || card.ActualHeight > 38.1 || card.Margin != new Thickness(16, 0, 0, 4)
                         || !(card.BorderBrush is SolidColorBrush stroke)
                         || stroke.Color != (Color)ColorConverter.ConvertFromString("#D8DEE8"))
                         throw new Exception("Activity entries need a thin rounded neutral border and compact card height.");
@@ -267,10 +267,10 @@ internal static class RecentActivityVisualTests
                     var title = VisualChildren<TextBlock>(card).Single(t => t.Text == entries[i].Title);
                     var bodyBottom = body.TransformToAncestor(card).Transform(new Point(0, body.ActualHeight)).Y;
                     if (body.TextWrapping != TextWrapping.NoWrap || body.TextTrimming != TextTrimming.CharacterEllipsis
-                        || !Equals(body.ToolTip, entries[i].Body) || body.ActualHeight < 14
+                        || !Equals(body.ToolTip, entries[i].TooltipText) || body.ActualHeight < 14
                         || bodyBottom > card.ActualHeight - card.BorderThickness.Bottom - card.Padding.Bottom + .1
                         || title.ActualHeight < 15)
-                        throw new Exception("Compact cards must show title plus one unclipped result line, with full result in the tooltip.");
+                        throw new Exception("Compact cards must show title plus one unclipped result line, with the full outcome in the tooltip.");
                 }
             }
             finally { window.CloseImmediate(); }
@@ -282,7 +282,7 @@ internal static class RecentActivityVisualTests
     {
         var activity = new ActivityAggregator(now: () => TimeSpan.Zero);
         for (var i = 0; i < 5000; i++)
-            activity.RecordResult("Tool " + i, "Result " + i, true, false, true, durationMs: 830);
+            activity.RecordResult("Tool " + i, "Result " + i, true, null, true, durationMs: 830);
         var cursor = new Point(10, 10);
         var window = new McpToastWindow(activity.TakeRender().Card, null, null, null, null, null,
             () => cursor, () => true);
@@ -324,7 +324,7 @@ internal static class RecentActivityVisualTests
             viewer.ScrollToTop(); Pump(100);
             if (!VisibleEntries(list, viewer).SequenceEqual(new[] { "Tool 0", "Tool 1", "Tool 2" }))
                 throw new Exception("Scrolling up did not reach the oldest retained calls.");
-            activity.RecordResult("Incoming", "New result", true, false, true);
+            activity.RecordResult("Incoming", "New result", true, null, true);
             window.Update(activity.TakeRender().Card); Pump(100);
             if (panel.Entries.Count != 5001 || panel.Entries[5000].Title != "Incoming"
                 || viewer.VerticalOffset != 0 || row.Height != height)

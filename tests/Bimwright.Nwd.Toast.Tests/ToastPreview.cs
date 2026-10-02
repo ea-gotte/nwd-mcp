@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Bimwright.Nwd.Shared.Views.Toast;
+using Bimwright.Nwd.Shared.Config;
 
 internal static class ToastPreview
 {
@@ -26,9 +27,16 @@ internal static class ToastPreview
         var activity = new ActivityAggregator(() => 60);
         var branding = false;
         var animations = true; // preview only: exercise motion even when RDP disables Windows animations
+        var position = new ToastPositionOptions();
+        var positionReadout = new TextBlock { Text = "Position: default corner (sample RAM only)", FontSize = 11, TextWrapping = TextWrapping.Wrap };
         var manager = new McpToastManager(Dispatcher.CurrentDispatcher, activity,
             showBranding: () => branding, instanceIdentity: () => "nwd-mcp · sample preview",
-            motionEnabled: () => animations);
+            motionEnabled: () => animations, positionOptions: () => position,
+            positionChanged: options =>
+            {
+                position = options;
+                positionReadout.Text = "Saved sample offset: " + options.OffsetX + ", " + options.OffsetY + " DIP (RAM only)";
+            });
         var controls = new StackPanel { Margin = new Thickness(18) };
         controls.Children.Add(new TextBlock
         {
@@ -89,6 +97,18 @@ internal static class ToastPreview
         brand.Checked += (_, __) => { branding = true; manager.ApplyShowBranding(); };
         brand.Unchecked += (_, __) => { branding = false; manager.ApplyShowBranding(); };
         controls.Children.Add(brand);
+        var horizontal = new ComboBox { ItemsSource = new[] { "Left", "Right" }, SelectedIndex = 0, Margin = new Thickness(0, 4, 0, 4) };
+        var vertical = new ComboBox { ItemsSource = new[] { "Top", "Bottom" }, SelectedIndex = 0, Margin = new Thickness(0, 4, 0, 4) };
+        horizontal.SelectionChanged += (_, __) => { position = position.WithCorner(horizontal.SelectedIndex == 1, vertical.SelectedIndex == 1); manager.ApplyPosition(); positionReadout.Text = "Corner changed; saved drag offset cleared."; };
+        vertical.SelectionChanged += (_, __) => { position = position.WithCorner(horizontal.SelectedIndex == 1, vertical.SelectedIndex == 1); manager.ApplyPosition(); positionReadout.Text = "Corner changed; saved drag offset cleared."; };
+        controls.Children.Add(horizontal);
+        controls.Children.Add(vertical);
+        var drag = new CheckBox { Content = "Allow dragging from title row", Margin = new Thickness(0, 4, 0, 4) };
+        drag.Checked += (_, __) => { position = position.WithDrag(true); manager.ApplyPosition(); };
+        drag.Unchecked += (_, __) => { position = position.WithDrag(false); manager.ApplyPosition(); };
+        controls.Children.Add(drag);
+        AddButton(controls, "Reset position (sample RAM only)", () => { position = position.WithOffset(null, null); manager.ApplyPosition(); positionReadout.Text = "Position reset."; });
+        controls.Children.Add(positionReadout);
         AddButton(controls, "Clear toast", manager.DismissAllImmediate);
         var controller = new Window
         {

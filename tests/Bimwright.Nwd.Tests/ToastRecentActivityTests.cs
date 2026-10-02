@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
 using Bimwright.Nwd.Shared.Views.Toast;
+using Bimwright.Nwd.Shared.Localization;
 using Newtonsoft.Json.Linq;
 
 namespace Bimwright.Nwd.Tests;
@@ -130,6 +131,21 @@ public sealed class ToastRecentActivityTests
         Assert.Equal(ToastActivityEntry.TitleLimit, bounded.Title.Length);
         Assert.Equal(ToastActivityEntry.BodyLimit, bounded.Body.Length);
         Assert.Null(bounded.DurationMs);
+    }
+
+    [Fact]
+    public void Tooltip_includes_sanitized_outcome_status_and_captured_timing()
+    {
+        var completed = DateTimeOffset.Now;
+        var entry = new ToastActivityEntry("Send Code", "password=private; Compile failed", false, 123, completed);
+        Assert.Contains(entry.Title + "\n" + entry.Body, entry.TooltipText);
+        Assert.Contains(L.T("toast.activity.failed"), entry.TooltipText);
+        Assert.Contains(entry.LocalTimeText, entry.TooltipText);
+        Assert.Contains("123 ms", entry.TooltipText);
+        Assert.DoesNotContain("private", entry.TooltipText);
+        var success = new ToastActivityEntry("Find Items", "24 matching items", true);
+        Assert.Contains(L.T("toast.activity.success"), success.TooltipText);
+        Assert.DoesNotContain(" ms", success.TooltipText);
     }
 
     [Theory]

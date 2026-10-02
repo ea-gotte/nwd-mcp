@@ -14,6 +14,11 @@ internal static class Program
     {
         try
         {
+            if (args.Length > 0 && args[0] == "--history")
+            {
+                HistoryVisualTests.Run();
+                return 0;
+            }
             if (args.Length > 0 && args[0] == "--thumbnail-motion")
             {
                 ToastVisualTests.CheckThumbnailMotion();
@@ -22,6 +27,11 @@ internal static class Program
             if (args.Length > 0 && args[0] == "--live-tail")
             {
                 LiveTailVisualTests.Run();
+                return 0;
+            }
+            if (args.Length > 0 && args[0] == "--position")
+            {
+                PositionVisualTests.Run();
                 return 0;
             }
             if (args.Length > 0 && args[0] == "--preview")
@@ -33,8 +43,11 @@ internal static class Program
             CheckCloseHover();
             CheckCompactLayout();
             ToastVisualTests.Run();
+            HoverRegressionTests.Run();
             RecentActivityVisualTests.Run();
+            ArrivalVisualTests.Run();
             LiveTailVisualTests.Run();
+            PositionVisualTests.Run();
             CheckNaNSafePlacement();
             CheckBrandingFollowsPreference();
             CheckIdentityRow();
@@ -42,6 +55,7 @@ internal static class Program
             CheckStationaryPointerFiltering();
             CheckSingleActivityCard();
             CheckStatusAndClickLifecycle();
+            HistoryVisualTests.Run();
             Console.WriteLine("PASS: single-card activity manager and WPF guards");
             return 0;
         }

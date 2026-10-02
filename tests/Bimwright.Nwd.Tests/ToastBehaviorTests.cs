@@ -263,6 +263,51 @@ public sealed class PluginSettingsToastTests : IDisposable
         Assert.True(PluginSettings.LoadRecordCalls());
     }
 
+    [Fact]
+    public void Position_preferences_round_trip_preserve_other_keys_and_reset_only_offset()
+    {
+        File.WriteAllText(PluginSettings.FilePathOverride!, "{\"other\":42,\"toastIdleSeconds\":30}");
+        var options = new ToastPositionOptions(true, true, true, -40.5, -20);
+        Assert.True(PluginSettings.SaveToastPosition(options));
+        var loaded = PluginSettings.LoadToastPosition();
+        Assert.True(loaded.Right && loaded.Bottom && loaded.DragEnabled && loaded.HasOffset);
+        Assert.Equal(-40.5, loaded.OffsetX);
+        Assert.Equal(-20, loaded.OffsetY);
+        Assert.True(PluginSettings.SaveToastPosition(loaded.WithDrag(false)));
+        Assert.True(PluginSettings.LoadToastPosition().HasOffset);
+        Assert.True(PluginSettings.SaveToastPosition(loaded.WithOffset(null, null)));
+        var saved = JObject.Parse(File.ReadAllText(PluginSettings.FilePathOverride!));
+        Assert.Null(saved["toastDragOffset"]);
+        Assert.Equal(42, saved["other"]!.Value<int>());
+        Assert.Equal(30, saved["toastIdleSeconds"]!.Value<int>());
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"toastHorizontalAlign\":\"invalid\",\"toastVerticalAlign\":12,\"toastDragEnabled\":\"true\"}")]
+    [InlineData("{\"toastDragOffset\":{\"x\":\"NaN\",\"y\":20}}")]
+    [InlineData("{\"toastDragOffset\":{\"x\":NaN,\"y\":20}}")]
+    [InlineData("{\"toastDragOffset\":{\"x\":Infinity,\"y\":20}}")]
+    [InlineData("{\"toastDragOffset\":{\"x\":12}}")]
+    [InlineData("[]")]
+    [InlineData("{")]
+    public void Invalid_or_missing_position_values_use_safe_defaults(string json)
+    {
+        File.WriteAllText(PluginSettings.FilePathOverride!, json);
+        var loaded = PluginSettings.LoadToastPosition();
+        Assert.False(loaded.Right || loaded.Bottom || loaded.DragEnabled || loaded.HasOffset);
+    }
+
+    [Fact]
+    public void Position_save_failure_preserves_existing_file_and_session_options()
+    {
+        File.WriteAllText(PluginSettings.FilePathOverride!, "{");
+        var options = new ToastPositionOptions(true, true, true, 20, 30);
+        Assert.False(PluginSettings.SaveToastPosition(options));
+        Assert.Equal("{", File.ReadAllText(PluginSettings.FilePathOverride!));
+        Assert.True(options.Right && options.Bottom && options.HasOffset);
+    }
+
     public void Dispose()
     {
         PluginSettings.FilePathOverride = null;

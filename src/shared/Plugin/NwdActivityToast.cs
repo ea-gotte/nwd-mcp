@@ -10,8 +10,7 @@ using NW = Autodesk.Navisworks.Api;
 namespace Bimwright.Nwd.Shared.Plugin;
 
 /// <summary>
-/// One activity card for the Navisworks session. Card clicks only dismiss:
-/// there is no History window yet.
+/// One activity card for the Navisworks session; clicks open session History.
 /// </summary>
 internal static class NwdActivityToast
 {
@@ -24,10 +23,27 @@ internal static class NwdActivityToast
     private static IntPtr _owner;
 
     public static bool Enabled => _enabled;
+    public static void ShowHistoryWindow() => _notifier?.ShowHistory();
 
     public static bool ShowBranding => _notifier?.ShowBranding ?? PluginSettings.LoadShowBranding();
 
     public static bool RecordCalls => NwdCallLog.Enabled;
+    public static ToastPositionOptions PositionOptions => _notifier?.PositionOptions ?? PluginSettings.LoadToastPosition();
+
+    public static bool ApplyPosition(ToastPositionOptions options)
+    {
+        var saved = PluginSettings.SaveToastPosition(options);
+        _notifier?.SetPositionOptions(options);
+        ReportPositionSaved(saved);
+        return saved;
+    }
+
+    private static void ReportPositionSaved(bool saved)
+    {
+        var status = _status;
+        if (status != null && !status.Dispatcher.HasShutdownStarted)
+            status.Dispatcher.BeginInvoke(new Action(() => status.SyncPosition(saved)));
+    }
 
     public static void Attach(TcpTransportServer server, int year)
     {
@@ -37,6 +53,7 @@ internal static class NwdActivityToast
         _presence = default;
         var host = new McpToastHost();
         _notifier = new McpToastNotifier(host, () => _enabled);
+        _notifier.PositionSaved += ReportPositionSaved;
         _notifier.SetInstanceInfo(Identity);
         try
         {
@@ -74,6 +91,7 @@ internal static class NwdActivityToast
             _server.CommandCompleted = null;
         try { _status?.Close(); } catch { }
         _status = null;
+        if (_notifier != null) _notifier.PositionSaved -= ReportPositionSaved;
         _notifier?.Shutdown();
         _notifier = null;
         _server = null;

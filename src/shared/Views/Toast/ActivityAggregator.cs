@@ -91,7 +91,7 @@ namespace Bimwright.Nwd.Shared.Views.Toast
     /// render runs return false, so a burst of results costs one render. Only a new result and
     /// a real pointer leave re-arm the deadline — rendering, ticking and status cards never do.
     /// </summary>
-    public sealed class ActivityAggregator
+    public sealed partial class ActivityAggregator
     {
         public const int DefaultIdleSeconds = 20;
         public const int ThumbnailHoldSeconds = 5;

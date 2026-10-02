@@ -19,11 +19,27 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         private bool _usesDedicatedThread;
         private bool _showBranding;
         private int _idleSeconds;
+        private volatile ToastPositionOptions _positionOptions;
+        public event Action<bool> PositionSaved;
+        public ToastPositionOptions PositionOptions => _positionOptions;
         private volatile string _instanceIdentity;
         private Func<bool> _frameUsable = () => true;
         private Application _toastApplication;
 
         public ActivityAggregator Aggregator { get; }
+        public ActivityHistory History { get; } = new ActivityHistory();
+        private ToastHistoryWindow _history;
+        public void ShowHistory() => Post(manager =>
+        {
+            if (_history == null)
+            {
+                _history = new ToastHistoryWindow(History, _instanceIdentity);
+                _history.Closed += (_, __) => _history = null;
+                _history.Show();
+            }
+            if (_history.WindowState == WindowState.Minimized) _history.WindowState = WindowState.Normal;
+            _history.Activate();
+        });
 
         /// <summary>Hover wordmark. Default off; loaded from nwdmcp.config.json at startup.</summary>
         public bool ShowBranding => _showBranding;
@@ -32,6 +48,7 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         {
             _idleSeconds = PluginSettings.LoadToastIdleSeconds();
             _showBranding = PluginSettings.LoadShowBranding();
+            _positionOptions = PluginSettings.LoadToastPosition();
             Aggregator = new ActivityAggregator(() => _idleSeconds);
         }
 
@@ -39,6 +56,19 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         {
             _showBranding = show;
             PostToManager(manager => manager.ApplyShowBranding());
+        }
+
+        public void SetPositionOptions(ToastPositionOptions options)
+        {
+            _positionOptions = options ?? new ToastPositionOptions();
+            PostToManager(manager => manager.ApplyPosition());
+        }
+
+        private void SaveDraggedPosition(ToastPositionOptions options)
+        {
+            _positionOptions = options;
+            var saved = PluginSettings.SaveToastPosition(options);
+            PositionSaved?.Invoke(saved);
         }
 
         public void SetIdleSeconds(int seconds)
@@ -219,6 +249,12 @@ namespace Bimwright.Nwd.Shared.Views.Toast
 
         public void Shutdown()
         {
+            try
+            {
+                _dispatcher?.Invoke(() => _history?.Close(), DispatcherPriority.Send,
+                    CancellationToken.None, TimeSpan.FromSeconds(2));
+            }
+            catch { }
             // Close windows before flipping the shutdown flag so DismissAll can still run.
             DismissAll(synchronous: true);
 
@@ -254,8 +290,11 @@ namespace Bimwright.Nwd.Shared.Views.Toast
                 dispatcher,
                 Aggregator,
                 () => _frameUsable(),
-                () => _showBranding,
-                () => _instanceIdentity);
+                showBranding: () => _showBranding,
+                instanceIdentity: () => _instanceIdentity,
+                onClick: _ => ShowHistory(),
+                positionOptions: () => _positionOptions,
+                positionChanged: SaveDraggedPosition);
         }
 
         private void PostToManager(Action<McpToastManager> action)

@@ -5,7 +5,7 @@ using System.Windows.Markup;
 namespace Bimwright.Nwd.Shared.Views.Toast
 {
     /// <summary>
-    /// Vertical subset of rvt-mcp BimwrightStyles: 8 DIP overlay track, rounded
+    /// Vertical subset of nwd-mcp BimwrightStyles: 8 DIP overlay track, rounded
     /// #CBD5E1 thumb, #AEB8C5 hover / #94A3B8 drag, resting opacity 0.22, no arrows.
     /// Keep this self-contained; public gateways do not build against each other.
     /// </summary>

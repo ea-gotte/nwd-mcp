@@ -8,7 +8,17 @@
     <RootNamespace>Bimwright.Nwd.Toast.Tests</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../src/shared/Views/Toast/McpToastHost.cs" Link="McpToastHost.cs" />
+    <Compile Include="../../src/shared/Views/Toast/McpToastNotifier.cs" Link="McpToastNotifier.cs" />
+    <Compile Include="../../src/shared/Config/PluginSettings.cs" Link="PluginSettings.cs" />
+
+    <Compile Include="../../src/shared/Views/Toast/ActivityHistory.cs" Link="ActivityHistory.cs" />
+    <Compile Include="../../src/shared/Views/Toast/ToastHistoryWindow.cs" Link="ToastHistoryWindow.cs" />
+
+    <Compile Include="../../src/shared/Views/Toast/ActivityAggregator.Nwd.cs" Link="ActivityAggregator.Nwd.cs" />
     <Compile Include="..\..\src\shared\Views\Toast\ActivityAggregator.cs" Link="ActivityAggregator.cs" />
+    <Compile Include="..\..\src\shared\Config\ToastPositionOptions.cs" Link="ToastPositionOptions.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastPlacement.cs" Link="ToastPlacement.cs" />
     <Compile Include="..\..\src\shared\Views\Toast\ToastActivityEntry.cs" Link="ToastActivityEntry.cs" />
     <Compile Include="..\..\src\shared\Views\Toast\ToastActivityLog.cs" Link="ToastActivityLog.cs" />
     <Compile Include="..\..\src\shared\Views\Toast\ToastScrollBarStyles.cs" Link="ToastScrollBarStyles.cs" />

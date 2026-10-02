@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -27,6 +28,12 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         private DispatcherTimer _scrollFadeTimer;
         private bool _scrollExpanded;
         private int _scrollFadeGeneration;
+        private int _arrivalGeneration;
+        private readonly List<FrameworkElement> _arrivalTargets = new List<FrameworkElement>();
+        private Border _arrivalDot;
+
+        /// <summary>True while a newly arrived row is still sliding/fading in.</summary>
+        internal bool IsArrivalAnimating { get; private set; }
 
         public ToastActivityPanel(Func<bool> motionEnabled = null)
         {
@@ -60,16 +67,34 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             PreviewMouseWheel += OnMouseWheel;
         }
 
-        internal IReadOnlyList<ToastActivityEntry> Entries { get; private set; } = ToastActivityLog.Freeze(null);
+        private static readonly DependencyProperty EntriesProperty = DependencyProperty.Register(
+            nameof(Entries), typeof(IReadOnlyList<ToastActivityEntry>), typeof(ToastActivityPanel),
+            new PropertyMetadata(ToastActivityLog.Freeze(null)));
+        public IReadOnlyList<ToastActivityEntry> Entries
+        {
+            get => (IReadOnlyList<ToastActivityEntry>)GetValue(EntriesProperty);
+            private set => SetValue(EntriesProperty, value);
+        }
 
         internal void SetEntries(IReadOnlyList<ToastActivityEntry> entries)
         {
+            CancelArrival();
             Entries = entries;
             _heading.Text = L.T("toast.activity.recent", ("count", entries.Count));
             _list.ItemsSource = entries;
             _list.Height = Math.Min(VisibleEntryCount, entries.Count) * EntryHeight;
             if (entries.Count == 0) StopScrollCue();
             InvalidateMeasure();
+        }
+
+        internal void RefreshLocalization()
+        {
+            _heading.Text = L.T("toast.activity.recent", ("count", Entries.Count));
+            var offset = _scrollViewer?.VerticalOffset ?? 0;
+            // Recreate only the small realized viewport so status automation labels use the new locale.
+            _list.ItemTemplate = EntryTemplate();
+            _list.UpdateLayout();
+            _scrollViewer?.ScrollToVerticalOffset(offset);
         }
 
         internal void UpdateEntries(IReadOnlyList<ToastActivityEntry> entries)
@@ -84,12 +109,127 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             SetEntries(entries);
             _list.UpdateLayout();
             if (followTail)
+            {
                 ScrollToLatest();
+                PlayArrival((_scrollViewer?.VerticalOffset ?? 0) - offset);
+            }
             else
             {
                 _scrollViewer.ScrollToVerticalOffset(offset);
                 _list.UpdateLayout();
+                // The reader keeps their place; only hint, through the scroll bar, that the list grew.
+                RevealScrollCue();
             }
+        }
+
+        /// <summary>
+        /// A new result follows the tail: the rows glide up by the distance the list just scrolled,
+        /// and the new row fades in while its outcome dot pops. Nothing here changes layout, the
+        /// scroll offset or the card size, so it is purely a transform/opacity overlay that is
+        /// removed when it ends or when anything else touches the list.
+        /// </summary>
+        private void PlayArrival(double scrolled)
+        {
+            if (!_motionEnabled() || !IsVisible || Entries.Count == 0)
+                return;
+            var last = _list.ItemContainerGenerator.ContainerFromIndex(Entries.Count - 1) as FrameworkElement;
+            if (last == null)
+                return;
+
+            var generation = ++_arrivalGeneration;
+            // Rows were at +scrolled before the jump; with nothing to scroll (list still growing) the new row
+            // only rises a few DIPs.
+            var shift = Math.Min(Math.Max(scrolled, 0), EntryHeight * VisibleEntryCount);
+            var duration = TimeSpan.FromMilliseconds(260);
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            IsArrivalAnimating = true;
+
+            for (var i = 0; i < Entries.Count; i++)
+            {
+                var row = _list.ItemContainerGenerator.ContainerFromIndex(i) as FrameworkElement;
+                if (row == null)
+                    continue;
+                var isNew = ReferenceEquals(row, last);
+                var from = isNew ? (shift > 0.5 ? shift : 10) : shift;
+                if (from < 0.5)
+                    continue;
+                var move = new TranslateTransform(0, from);
+                row.RenderTransform = move;
+                _arrivalTargets.Add(row);
+                var slide = new DoubleAnimation(from, 0, duration) { EasingFunction = ease, FillBehavior = FillBehavior.Stop };
+                if (isNew)
+                {
+                    slide.Completed += (_, __) =>
+                    {
+                        if (generation == _arrivalGeneration)
+                            CancelArrival();
+                    };
+                    row.Opacity = 0;
+                    row.BeginAnimation(OpacityProperty,
+                        new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
+                }
+                move.BeginAnimation(TranslateTransform.YProperty, slide);
+            }
+
+            // Outcome dot: a short overshoot pop so the new result reads as "just landed".
+            var dot = FindTagged(last, "OutcomeNode") as Border;
+            if (dot != null)
+            {
+                var scale = new ScaleTransform(0.3, 0.3);
+                dot.RenderTransformOrigin = new Point(0.5, 0.5);
+                dot.RenderTransform = scale;
+                _arrivalDot = dot;
+                var pop = new DoubleAnimation(0.3, 1, TimeSpan.FromMilliseconds(320))
+                {
+                    EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.8 },
+                    FillBehavior = FillBehavior.Stop
+                };
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+            }
+        }
+
+        /// <summary>Remove every arrival transform/clock and restore the resting state.</summary>
+        internal void CancelArrival()
+        {
+            ++_arrivalGeneration;
+            foreach (var row in _arrivalTargets)
+            {
+                row.BeginAnimation(OpacityProperty, null);
+                row.Opacity = 1;
+                if (row.RenderTransform is TranslateTransform move)
+                    move.BeginAnimation(TranslateTransform.YProperty, null);
+                row.RenderTransform = Transform.Identity;
+            }
+            _arrivalTargets.Clear();
+            if (_arrivalDot != null)
+            {
+                if (_arrivalDot.RenderTransform is ScaleTransform scale)
+                {
+                    scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                    scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                }
+                _arrivalDot.RenderTransform = Transform.Identity;
+                _arrivalDot = null;
+            }
+            IsArrivalAnimating = false;
+        }
+
+        private static FrameworkElement FindTagged(DependencyObject root, string tag)
+        {
+            if (root == null)
+                return null;
+            var count = VisualTreeHelper.GetChildrenCount(root);
+            for (var i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child is FrameworkElement element && Equals(element.Tag, tag))
+                    return element;
+                var found = FindTagged(child, tag);
+                if (found != null)
+                    return found;
+            }
+            return null;
         }
 
         /// <summary>Start a new hover at the tail, or continue following after new results.</summary>
@@ -119,6 +259,7 @@ namespace Bimwright.Nwd.Shared.Views.Toast
         private void OnLoaded(object sender, RoutedEventArgs e) => EnsureScrollViewer();
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
+            CancelArrival();
             StopScrollCue();
             if (_scrollViewer != null) _scrollViewer.ScrollChanged -= OnScrollChanged;
             _scrollViewer = null;
@@ -208,50 +349,74 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             return style;
         }
 
-        private static DataTemplate EntryTemplate()
+        private DataTemplate EntryTemplate()
         {
-            var row = new FrameworkElementFactory(typeof(Border));
-            // 38 DIP card + 4 DIP gap: title/time and one result line, no empty tall rows.
-            row.SetValue(HeightProperty, EntryHeight - 4);
-            row.SetValue(MarginProperty, new Thickness(0, 0, 0, 4));
-            row.SetValue(PaddingProperty, new Thickness(6, 2, 6, 2));
-            row.SetValue(BorderThicknessProperty, new Thickness(1));
-            row.SetValue(BorderBrushProperty, McpToastTheme.ActivityBorder);
-            row.SetValue(CornerRadiusProperty, new CornerRadius(4));
-            row.SetValue(BackgroundProperty, Brushes.White);
-            row.SetBinding(System.Windows.Automation.AutomationProperties.NameProperty, new Binding("Title"));
-            row.SetBinding(System.Windows.Automation.AutomationProperties.HelpTextProperty, new Binding("Body"));
+            bool First(ToastActivityEntry e) => Entries.Count > 0 && ReferenceEquals(e, Entries[0]);
+            bool Last(ToastActivityEntry e) => Entries.Count > 0 && ReferenceEquals(e, Entries[Entries.Count - 1]);
+            var row = new FrameworkElementFactory(typeof(Grid));
+            row.SetValue(FrameworkElement.HeightProperty, 42.0);
+            foreach (var top in new[] { true, false })
+            {
+                var rail = new FrameworkElementFactory(typeof(Border));
+                rail.SetValue(FrameworkElement.TagProperty, top ? "TimelineTopRail" : "TimelineBottomRail");
+                rail.SetValue(FrameworkElement.WidthProperty, 1.0);
+                rail.SetValue(FrameworkElement.HeightProperty, 21.0);
+                rail.SetValue(FrameworkElement.MarginProperty, new Thickness(7, 0, 0, 0));
+                rail.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+                rail.SetValue(FrameworkElement.VerticalAlignmentProperty, top ? VerticalAlignment.Top : VerticalAlignment.Bottom);
+                rail.SetValue(Border.BackgroundProperty, McpToastTheme.ActivityBorder);
+                rail.SetBinding(UIElement.VisibilityProperty, Project(e => (top ? First(e) : Last(e)) ? Visibility.Collapsed : Visibility.Visible));
+                row.AppendChild(rail);
+            }
+            var dot = new FrameworkElementFactory(typeof(Border));
+            dot.SetValue(FrameworkElement.TagProperty, "OutcomeNode");
+            dot.SetValue(FrameworkElement.WidthProperty, 7.0);
+            dot.SetValue(FrameworkElement.HeightProperty, 7.0);
+            dot.SetValue(FrameworkElement.MarginProperty, new Thickness(4, 16, 0, 0));
+            dot.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+            dot.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
+            dot.SetBinding(Border.CornerRadiusProperty, Project(e => new CornerRadius(e.Success ? 4 : 1.5)));
+            dot.SetBinding(Border.BackgroundProperty, Project(e => e.Success ? McpToastTheme.Primary : McpToastTheme.Error));
+            dot.SetBinding(FrameworkElement.ToolTipProperty, Project(e => L.T(e.Success ? "toast.activity.success" : "toast.activity.failed")));
+            dot.SetBinding(System.Windows.Automation.AutomationProperties.NameProperty, Project(e => L.T(e.Success ? "toast.activity.success" : "toast.activity.failed")));
+            row.AppendChild(dot);
+
+            var card = new FrameworkElementFactory(typeof(Border));
+            card.SetValue(FrameworkElement.TagProperty, "OutcomeCard");
+            card.SetValue(FrameworkElement.HeightProperty, 38.0);
+            card.SetValue(FrameworkElement.MarginProperty, new Thickness(16, 0, 0, 4));
+            card.SetValue(Border.PaddingProperty, new Thickness(6, 2, 6, 2));
+            card.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+            card.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            card.SetValue(Border.BackgroundProperty, Brushes.White);
+            card.SetValue(Border.BorderBrushProperty, McpToastTheme.ActivityBorder);
+            card.SetBinding(System.Windows.Automation.AutomationProperties.NameProperty, new Binding("Title"));
+            card.SetBinding(System.Windows.Automation.AutomationProperties.HelpTextProperty, new Binding("Body"));
+            card.SetBinding(FrameworkElement.ToolTipProperty, new Binding("TooltipText"));
+            row.AppendChild(card);
             var content = new FrameworkElementFactory(typeof(StackPanel));
-            row.AppendChild(content);
+            card.AppendChild(content);
             var line = new FrameworkElementFactory(typeof(DockPanel));
             content.AppendChild(line);
-            var glyph = Text(11, McpToastTheme.Primary);
-            glyph.SetValue(TextBlock.FontFamilyProperty, McpToastTheme.IconFont);
-            glyph.SetValue(MarginProperty, new Thickness(0, 1, 6, 0));
-            glyph.SetValue(DockPanel.DockProperty, Dock.Left);
-            glyph.SetBinding(TextBlock.TextProperty, new Binding("Success") { Converter = new OutcomeConverter(false) });
-            glyph.SetBinding(TextBlock.ForegroundProperty, new Binding("Success") { Converter = new OutcomeConverter(true) });
-            glyph.SetBinding(System.Windows.Automation.AutomationProperties.NameProperty,
-                new Binding("Success") { Converter = new OutcomeConverter(false), ConverterParameter = "status" });
-            line.AppendChild(glyph);
             var time = Text(10, McpToastTheme.TextSecondary);
             time.SetValue(DockPanel.DockProperty, Dock.Right);
-            time.SetValue(MarginProperty, new Thickness(6, 1, 0, 0));
+            time.SetValue(FrameworkElement.MarginProperty, new Thickness(6, 1, 0, 0));
+            time.SetValue(Typography.NumeralAlignmentProperty, FontNumeralAlignment.Tabular);
             time.SetBinding(TextBlock.TextProperty, new Binding("LocalTimeText"));
             line.AppendChild(time);
             var title = Text(12, McpToastTheme.Text);
             title.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
             title.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
             title.SetBinding(TextBlock.TextProperty, new Binding("Title"));
-            title.SetBinding(ToolTipProperty, new Binding("Title"));
+            title.SetBinding(FrameworkElement.ToolTipProperty, new Binding("TooltipText"));
             line.AppendChild(title);
             var body = Text(11, McpToastTheme.TextSecondary);
             body.SetValue(TextBlock.TextWrappingProperty, TextWrapping.NoWrap);
             body.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
-            body.SetValue(MaxHeightProperty, 16.0);
-            body.SetValue(MarginProperty, new Thickness(17, 1, 0, 0));
+            body.SetValue(FrameworkElement.MaxHeightProperty, 16.0);
+            body.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 1, 0, 0));
             body.SetBinding(TextBlock.TextProperty, new Binding("Body"));
-            body.SetBinding(ToolTipProperty, new Binding("Body"));
+            body.SetBinding(FrameworkElement.ToolTipProperty, new Binding("TooltipText"));
             content.AppendChild(body);
             return new DataTemplate(typeof(ToastActivityEntry)) { VisualTree = row };
         }
@@ -264,18 +429,24 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             return text;
         }
 
-        private sealed class OutcomeConverter : IValueConverter
+        // Re-evaluate rails when Entries changes, including an unchanged previous-last item
+        // whose container WPF reuses after a live append. No cached endpoint flags on entries.
+        private MultiBinding Project(Func<ToastActivityEntry, object> projection)
         {
-            private readonly bool _brush;
-            internal OutcomeConverter(bool brush) { _brush = brush; }
-            public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-            {
-                var success = value is bool ok && ok;
-                if (Equals(parameter, "status")) return L.T(success ? "toast.activity.success" : "toast.activity.failed");
-                return _brush ? (object)(success ? McpToastTheme.Primary : McpToastTheme.Error)
-                    : success ? "\uE73E" : "\uE783";
-            }
-            public object ConvertBack(object value, Type type, object parameter, CultureInfo culture) => Binding.DoNothing;
+            var binding = new MultiBinding { Converter = new Projection(projection), Mode = BindingMode.OneWay };
+            binding.Bindings.Add(new Binding());
+            binding.Bindings.Add(new Binding(nameof(Entries)) { Source = this });
+            return binding;
+        }
+
+        private sealed class Projection : IMultiValueConverter
+        {
+            private readonly Func<ToastActivityEntry, object> _project;
+            internal Projection(Func<ToastActivityEntry, object> project) { _project = project; }
+            public object Convert(object[] values, Type type, object parameter, CultureInfo culture) =>
+                values.Length > 0 && values[0] is ToastActivityEntry entry ? _project(entry) : DependencyProperty.UnsetValue;
+            public object[] ConvertBack(object value, Type[] types, object parameter, CultureInfo culture) =>
+                throw new NotSupportedException();
         }
 
         private static T Find<T>(DependencyObject root) where T : DependencyObject

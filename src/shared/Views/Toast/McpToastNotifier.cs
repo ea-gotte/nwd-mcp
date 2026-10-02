@@ -2,6 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Bimwright.Nwd.Shared.Localization;
+using Bimwright.Nwd.Shared.Config;
 
 namespace Bimwright.Nwd.Shared.Views.Toast
 {
@@ -30,7 +31,17 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             _host.SetOwnerHandle(hwnd);
         }
 
+        public ToastPositionOptions PositionOptions => _host.PositionOptions;
+        public void SetPositionOptions(ToastPositionOptions options) => _host.SetPositionOptions(options);
+        public event Action<bool> PositionSaved
+        {
+            add { _host.PositionSaved += value; }
+            remove { _host.PositionSaved -= value; }
+        }
+
         public bool ShowBranding => _host.ShowBranding;
+        public ActivityHistory History => _host.History;
+        public void ShowHistory() => _host.ShowHistory();
 
         public void SetShowBranding(bool show) => _host.SetShowBranding(show);
 
@@ -49,15 +60,15 @@ namespace Bimwright.Nwd.Shared.Views.Toast
             string errorMessage,
             string toolDescription)
         {
-            if (!_isEnabled())
-                return;
-
             var vm = ToastContentBuilder.BuildCompleted(
                 toolName,
                 resultJson,
                 success,
                 errorMessage,
                 toolDescription);
+
+            _host.History.Record(vm);
+            if (!_isEnabled()) return;
 
             var imagePath = ToastContentBuilder.IsSafeImagePath(vm.ThumbnailPath) ? vm.ThumbnailPath : null;
             Record(vm.Title, vm.Body, vm.Success, vm.Success && imagePath != null, imagePath, vm.DurationMs);

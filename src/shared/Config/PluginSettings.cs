@@ -97,7 +97,56 @@ public static class PluginSettings
         return TryUpdate(root => root["recordCalls"] = record);
     }
 
+    public static ToastPositionOptions LoadToastPosition()
+    {
+        try
+        {
+            if (!File.Exists(FilePath)) return new ToastPositionOptions();
+            var root = JObject.Parse(File.ReadAllText(FilePath));
+            var offset = root["toastDragOffset"] as JObject;
+            double? x = ReadFiniteNumber(offset?["x"]);
+            double? y = ReadFiniteNumber(offset?["y"]);
+            return new ToastPositionOptions(
+                root["toastHorizontalAlign"]?.Type == JTokenType.String && (string?)root["toastHorizontalAlign"] == "right",
+                root["toastVerticalAlign"]?.Type == JTokenType.String && (string?)root["toastVerticalAlign"] == "bottom",
+                root["toastDragEnabled"]?.Type == JTokenType.Boolean && (bool)root["toastDragEnabled"]!, x, y);
+        }
+        catch { return new ToastPositionOptions(); }
+    }
+
+    private static double? ReadFiniteNumber(JToken? token)
+    {
+        if (token == null || (token.Type != JTokenType.Integer && token.Type != JTokenType.Float)) return null;
+        try
+        {
+            var number = token.Value<double>();
+            return ToastPositionOptions.Finite(number) ? number : (double?)null;
+        }
+        catch { return null; }
+    }
+
+    public static bool SaveToastPosition(ToastPositionOptions options)
+    {
+        return TryUpdate(root =>
+        {
+            root["toastHorizontalAlign"] = options.Right ? "right" : "left";
+            root["toastVerticalAlign"] = options.Bottom ? "bottom" : "top";
+            root["toastDragEnabled"] = options.DragEnabled;
+            if (options.HasOffset)
+                root["toastDragOffset"] = new JObject { ["x"] = options.OffsetX.GetValueOrDefault(), ["y"] = options.OffsetY.GetValueOrDefault() };
+            else
+                root.Remove("toastDragOffset");
+        });
+    }
+
+    private static readonly object WriteGate = new object();
+
     private static bool TryUpdate(Action<JObject> mutate)
+    {
+        lock (WriteGate) return TryUpdateCore(mutate);
+    }
+
+    private static bool TryUpdateCore(Action<JObject> mutate)
     {
         var path = FilePath;
         try
