@@ -10,6 +10,13 @@ namespace Bimwright.Nwd.Tests;
 
 public sealed class ToastRecentActivityTests
 {
+    [Theory]
+    [InlineData(3, "Activity · 3 calls")]
+    [InlineData(1000, "Activity · 1,000 calls")]
+    [InlineData(1000000, "Activity · 1,000,000 calls")]
+    public void Timeline_heading_formats_counts_like_RVT(int count, string expected) =>
+        Assert.Equal(expected, L.T("toast.activity.recent", ("count", count)));
+
     [Fact]
     public void Card_keeps_every_outcome_in_completion_order()
     {

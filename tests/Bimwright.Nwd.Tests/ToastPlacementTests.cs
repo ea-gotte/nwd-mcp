@@ -7,8 +7,8 @@ namespace Bimwright.Nwd.Tests;
 public sealed class ToastPlacementTests
 {
     [Theory]
-    [InlineData(false, false, 116, 216)]
-    [InlineData(true, false, 768, 216)]
+    [InlineData(false, false, 116, 272)]
+    [InlineData(true, false, 768, 272)]
     [InlineData(false, true, 116, 883)]
     [InlineData(true, true, 768, 883)]
     public void Four_corners_preserve_owner_relative_margin(bool right, bool bottom, double left, double top)
@@ -24,7 +24,7 @@ public sealed class ToastPlacementTests
         var options = new ToastPositionOptions(offsetX: 45, offsetY: 60, dragEnabled: true);
         var card = ToastPlacement.Anchor(new ToastBounds(-1920, 0, 1920, 1080), 316, 101, options);
         Assert.Equal(-1859, card.Left);
-        Assert.Equal(76, card.Top);
+        Assert.Equal(132, card.Top);
         Assert.True(options.WithDrag(false).HasOffset);
         Assert.Equal(-1904, ToastPlacement.Anchor(new ToastBounds(-1920, 0, 1920, 1080), 316, 101, options.WithDrag(false)).Left);
         Assert.True(options.WithCorner(false, false).HasOffset);
