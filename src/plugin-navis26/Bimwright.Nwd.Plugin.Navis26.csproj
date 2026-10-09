@@ -6,7 +6,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Bimwright.Nwd.Plugin</RootNamespace>
     <AssemblyName>Bimwright.Nwd.Plugin.Navis26</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Version>1.0.1</Version>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <NavisworksYear>2026</NavisworksYear>

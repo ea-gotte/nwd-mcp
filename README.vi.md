@@ -30,6 +30,8 @@
 
 Navisworks hiện một thẻ cho các lệnh MCP. Thẻ bật sẵn và ở lại 20 giây sau kết quả mới nhất (chọn 10, 20, 30 hoặc 60). Đưa chuột vào thì tạm dừng; rời thẻ thì đếm lại đủ khoảng chờ. Hover có chủ ý sẽ mở rộng mượt khung ba thẻ kết quả thấp gọn, có viền riêng trong thẻ hiện tại (tool, kết quả, thành công/lỗi và giờ hoàn tất theo giờ máy, định dạng 24 giờ `HH:mm:ss`). Giữ mọi kết quả thuộc thẻ đó, cũ ở trên và mới ở dưới; ban đầu hiện ba call mới nhất, cuộn lên để xem call cũ bằng scrollbar mỏng theo mẫu RVT. Rời chuột thì thu gọn mượt. Call mới được thêm ngay: ở đáy thì khung tự theo call mới nhất; khi cuộn lên đọc call cũ thì giữ nguyên vị trí cuộn. Cuộn lại xuống đáy sẽ tiếp tục tự theo call mới. Khung hoạt động cả khi tắt branding và tôn trọng chế độ giảm chuyển động. Các tóm tắt có giới hạn độ dài chỉ nằm trong RAM, bị bỏ khi đóng hoặc reset thẻ; không bật Record và không giữ request, JSON kết quả hay mã nguồn script thô. Wordmark BIMwright tắt cho đến khi bật Show branding. `nwd_health_check` không lên thẻ. Tab ribbon **Bimwright** có **Toasts**, **Toast Brand**, **Record** và **Status**. **Record** tắt cho đến khi bạn bật; khi bật, mọi lệnh được ghi thêm vào `%LOCALAPPDATA%\Bimwright\nwd-mcp\mcp-calls.jsonl`. `send_code` chỉ lưu độ dài và SHA-256, không lưu mã nguồn. Cấu hình nằm ở `%LOCALAPPDATA%\Bimwright\nwd-mcp\nwdmcp.config.json`. `BIMWRIGHT_NWD_ENABLE_TOAST` và `BIMWRIGHT_NWD_RECORD_CALLS` ghi đè hai công tắc đó ở lần mở sau.
 
+**Status → vị trí toast:** chọn riêng Trái/Phải và Trên/Dưới (mặc định trên-trái). Áp dụng và lưu ngay; đổi góc sẽ xóa độ lệch đã kéo. Bật **Allow dragging the toast** để kéo hàng tiêu đề; click thường vẫn đóng thẻ. Tắt kéo đưa thẻ về góc đã chọn nhưng giữ vị trí cũ; bật lại để khôi phục. **Reset position** xóa độ lệch. Vị trí lưu theo cửa sổ Navisworks bằng DIP, giới hạn trong vùng làm việc của màn hình. Neo dưới mở lên; thiếu chỗ thì đổi hướng mở. Animation tôn trọng thiết lập Windows. Lỗi lưu được báo ngay trong Status, giá trị mới vẫn có hiệu lực trong phiên. Tooltip của tool/kết quả có nội dung đã che thông tin nhạy cảm, trạng thái, giờ hoàn tất và thời lượng nếu có. Chưa phối hợp chống chồng toast giữa nhiều app.
+
 ---
 
 ## Trạng thái Hiện tại
@@ -68,7 +70,7 @@ Một lần chạy mặc định đăng ký đủ mọi nhóm: **33 công cụ**
 * `nwd_import_model` *(Ghi)* — Đưa một mô hình vào tài liệu đang mở. `append` (mặc định) thêm thành model riêng; `merge` gộp vào tài liệu.
 
 ### 3. Công cụ Truy vấn / Đọc (8)
-* `nwd_health_check` — Kiểm tra trạng thái và tín hiệu nhịp tim (heartbeat) của phiên chạy.
+* `nwd_health_check` — Kiểm tra host/document, version/build đang chạy của server và plugin, cùng trạng thái khớp version/revision. Mặc định offline; `check_updates=true` đối chiếu cả hai component với stable release chính thức. Không có host vẫn trả identity server với `ok:false`, `host_connected:false`.
 * `nwd_get_document_info` — Lấy thông tin tài liệu hoạt động: tên, đường dẫn tệp, và số lượng mô hình liên kết.
 * `nwd_get_model_statistics` — Lấy số liệu thống kê: số lượng phần tử, số lượng mô hình, và số đối tượng đang được chọn.
 * `nwd_get_model_tree` — Lấy cấu trúc cây phân cấp mô hình giới hạn.
@@ -110,6 +112,18 @@ Một lần chạy mặc định đăng ký đủ mọi nhóm: **33 công cụ**
 
 ---
 
+## Health runtime và cập nhật
+
+Gọi `nwd_health_check(check_updates=true)` một lần đầu phiên sau khi chọn target để phát hiện stable release mới. Nếu mạng không có hoặc không được phép, dùng mặc định offline và giữ trạng thái not checked/unknown. Các probe thường về sau vẫn offline. `setup_gateway`/`setup_plugin` mô tả assembly đang nạp; SHA-256 chỉ quan sát file trên đĩa tại thời điểm capture, không chứng minh memory đã reload hay publisher đáng tin. Plugin cũ thiếu identity trả version/build `unknown`. Probe host chạy qua UI thread nên có thể timeout khi Navisworks bận.
+
+`check_updates=true` dùng một stable release/tag revision chính thức và tổng ngân sách mạng 5 giây. Xem riêng `update.components.server` và `.plugin`: version bằng nhau chưa đủ, thiếu bằng chứng vẫn `unknown`; so revision không xác minh bytes artifact. `checked` chỉ xác nhận lookup thành công. `update_available` của từng component so semantic version; false hoặc notification null không chứng minh khớp release.
+
+Đọc `update.notification` và làm theo `agent_action`: `NEW_RELEASE_AVAILABLE` báo version mới; `RELEASE_REVIEW_REQUIRED`/`RELEASE_IDENTITY_UNVERIFIED` yêu cầu review; `LOCAL_VERSION_AHEAD` chỉ thông báo bản local mới hơn; `UPDATE_CHECK_UNAVAILABLE` báo lỗi lookup bên ngoài qua `lookup_reason`, không suy ra lỗi runtime hay xin phép cài đặt. Giữ `protected_components`, giải thích `protected_component_reasons`; không downgrade bản mới hơn. `unobserved_components` cần kiểm tra connection/runtime, không mặc định host đã đóng hoặc build bị hỏng. `identity_observed` và `comparison_reason` tách thiếu metadata runtime khỏi thiếu bằng chứng release.
+
+`update_guidance.mode` gồm `check_only`, `retry_check`, `review`, `none`, `prepare_update`. Chỉ `prepare_update` với `bundle_update_proposal_allowed=true` mới đưa các bước cài và cần quyền cài đặt; tái sử dụng quyền đã có. Các mode khác chỉ check/report/review. Component mới hơn, peer chưa xác minh, lỗi lookup tag hoặc peer chưa quan sát chặn đề xuất full ZIP. Health không tự download package/cài/restart hay save/close document. Làm theo [AGENTS.md](AGENTS.md) để preview, xin phép, backup và xác minh; installer hiện chưa rollback nguyên tử bundle+server. Không tự thay development build.
+
+Sau restart Navisworks và reconnect client, đối chiếu `initialize.serverInfo` và metadata/schema/annotations của `tools/list` mới trên **cùng connection** với `client_verification`. Server không tự xác minh được client đã refresh cache; thiếu bằng chứng client thì chưa xác minh.
+
 ## Cấu Hình An Toàn
 
 ### Chế độ Chỉ Đọc (Read-Only Mode)
@@ -122,7 +136,7 @@ Có thể kích hoạt chế độ chỉ đọc nghiêm ngặt bằng cờ `--re
 **Record** **tắt sẵn**. Nút trên ribbon, ô trong cửa sổ Status, khóa `recordCalls` trong `nwdmcp.config.json` và `BIMWRIGHT_NWD_RECORD_CALLS` là cùng một công tắc cho mọi công cụ. Khi bật, mỗi lệnh được ghi thêm vào `mcp-calls.jsonl` cạnh file cấu hình đó. Mã `send_code` không được ghi; dòng nhật ký lưu `code_length` và `code_sha256`.
 
 ### Quyền (permissions) & auto mode
-Mọi tool trừ `nwd_send_code` đều khai báo annotation MCP (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint=false`). Claude Desktop dựa vào đó: tool đọc chỉ cần cho phép một lần, còn tool destructive (`nwd_open_file`, `nwd_hide_items`, `nwd_unhide_all`, `nwd_run_baked_tool`, `nwd_dismiss_bake_suggestion`) luôn hỏi.
+Mọi tool trừ `nwd_send_code` đều khai báo annotation MCP (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`). Open-world là false trừ `nwd_health_check` vì tùy chọn kiểm tra cập nhật truy cập GitHub; health vẫn read-only, không destructive. Claude Desktop dựa vào đó: tool đọc chỉ cần cho phép một lần, còn tool destructive (`nwd_open_file`, `nwd_hide_items`, `nwd_unhide_all`, `nwd_run_baked_tool`, `nwd_dismiss_bake_suggestion`) luôn hỏi.
 
 Auto mode của Claude Code kiểm tra từng lời gọi MCP bằng classifier. Muốn bỏ qua bước này cho các tool chỉ đọc, thêm chúng vào `permissions.allow` trong `.claude/settings.json` (đổi `nwd-mcp` nếu mục MCP của bạn dùng tên khác):
 
@@ -170,6 +184,10 @@ Cơ sở dữ liệu lưu trữ sqlite (`bake.db`) và nhật ký kiểm tra quy
 Kết quả tool là JSON nén gọn. Trên 64 KiB server thêm trường `_response_warning` vào kết quả (mạnh hơn trên 256 KiB); quá ngân sách 1 MiB kết quả bị từ chối với `RESPONSE_TOO_LARGE` — trừ tool ghi đã chạy xong, khi đó nó trả về bản tóm tắt thành công đã nén (`response_compacted`, `mutation_applied`) thay vì báo lỗi.
 Bốn tool chấp nhận `output=file` để ghi toàn bộ kết quả ra một file cục bộ trên cùng máy và trả về đường dẫn, schema và bản xem trước: `nwd_get_model_tree` (JSON), `nwd_batch_get_properties` (SQLite), `nwd_find_items_by_name` (NDJSON) và `nwd_run_baked_tool` (định dạng tự nhận diện). `nwd_send_code` không có tham số `output`; đầu ra trên 1 MiB tự động spill theo cùng cách.
 Các file spill nằm trong `%LOCALAPPDATA%\Bimwright\nwd-mcp\spill`, được giữ 24 giờ, tối đa 50 file, và bị xóa khi gỡ cài đặt.
+
+## Đo hiệu năng
+
+Thời gian, kích thước kết quả, token ước tính và kết quả chính sách kích thước của đủ 33 công cụ trên Navisworks Manage 2025: [docs/benchmarks/2026-09-30-navisworks-manage-2025.md](docs/benchmarks/2026-09-30-navisworks-manage-2025.md).
 
 ---
 

@@ -7,6 +7,20 @@ public static class ServerInstructions
         "Tools are prefixed nwd_*. Lengths are in the model's display units. " +
         "Multi-instance: if more than one Navisworks may be open, call nwd_list_available_targets " +
         "then nwd_switch_target. Versions are 4-digit years (2022..2027). " +
+        "At session start, select the intended target then call nwd_health_check(check_updates=true) once to discover newer stable releases " +
+        "and report host state, loaded server/plugin versions, build ids and alignment. If network access is unavailable or disallowed, " +
+        "use the offline default and keep the update status not_checked/unknown. Later routine probes stay offline. " +
+        "Inspect both update.components; missing evidence or a failed lookup is unknown, not up to date. " +
+        "When update.notification is present, report its code/message and follow agent_action: propose the release ZIP only if " +
+        "bundle_update_proposal_allowed=true and update_guidance.mode=prepare_update; other modes contain only check/review steps. " +
+        "UPDATE_CHECK_UNAVAILABLE reports an external lookup_reason, not a runtime fault or request for installation authorization. " +
+        "Report LOCAL_VERSION_AHEAD neutrally; preserve protected_components and explain protected_component_reasons. " +
+        "unobserved_components need connection/runtime observation, not a corruption warning. A review warning does not mean a new version exists. " +
+        "Installation authorization applies only to a permitted proposal; reuse existing permission. Never recommend a downgrade or " +
+        "automatically replace a development build, install or restart processes. host_connected=false or ok=false is not a successful host connection. " +
+        "Matching revisions do not verify artifact bytes, compatibility or publisher trust. " +
+        "After updating and reconnecting, compare fresh initialize serverInfo and tools/list metadata/schema/annotations " +
+        "on that same connection with health.client_verification. The server cannot observe client cache refresh. " +
         "A default launch registers every toolset. " +
         "nwd_list_recent_files reads that year's File menu list. " +
         "nwd_open_file opens a file. nwd_import_model appends a model, or merges it when mode is merge. " +

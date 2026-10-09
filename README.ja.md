@@ -30,6 +30,8 @@
 
 Navisworks は MCP コマンドごとに 1 枚のアクティビティカードを表示します。トーストは既定でオンで、直近の結果から 20 秒残ります（10 / 20 / 30 / 60）。ホバーで一時停止し、離れると間隔を最初から数え直します。意図的にホバーすると、現在のカードの結果を、各項目に枠線を付けたコンパクトな3行の表示領域に滑らかに展開します（ツール、結果、成功／失敗、ローカルの完了時刻を24時間形式 `HH:mm:ss` で表示）。カード内の全件を古い順に保持し、最初は下端の最新3件を表示します。RVTと同じ細いスクロールバーで上にスクロールすると過去の呼び出しを確認できます。離れると滑らかに折りたたまれます。新しい結果はすぐに追加され、下端を見ている場合は最新の呼び出しに追従します。過去の呼び出しを読んでいる場合はスクロール位置を保ち、下端に戻ると追従を再開します。branding がオフでも使え、動きを減らす設定にも対応します。長さを制限した要約はメモリ内だけに保持し、カードを閉じるかリセットすると破棄します。Record は有効にせず、生のリクエスト、結果JSON、スクリプトソースは保持しません。BIMwright のワードマークは Show branding をオンにするまで出ません。`nwd_health_check` はカードに出ません。リボンの **Bimwright** タブに **Toasts**、**Toast Brand**、**Record**、**Status** があります。**Record** はオンにするまでオフです。オンにすると、すべてのツール呼び出しを `%LOCALAPPDATA%\Bimwright\nwd-mcp\mcp-calls.jsonl` に追記します。`send_code` はソースではなく長さと SHA-256 を保存します。設定は `%LOCALAPPDATA%\Bimwright\nwd-mcp\nwdmcp.config.json` です。`BIMWRIGHT_NWD_ENABLE_TOAST` と `BIMWRIGHT_NWD_RECORD_CALLS` は次回起動時にそれぞれのスイッチを上書きします。
 
+**Status → トーストの位置:** 左／右と上／下を個別に選択します（既定：左上）。即時適用・保存し、角を変更するとドラッグ位置を消去します。**Allow dragging the toast** を有効にするとタイトル行をドラッグできます。通常のクリックは引き続きカードを閉じます。無効化しても保存位置は残り、再度有効にすると復元します。**Reset position** はオフセットを削除します。位置は Navisworks ウィンドウからの相対 DIP で保存し、モニターの作業領域内に収めます。下端に配置すると上方向に展開し、空きがなければ逆方向を使います。アニメーションは Windows の設定に従います。保存失敗は Status 内に表示し、新設定は現在のセッションで有効です。ツール／結果のツールチップには機密情報を伏せた結果、状態、完了時刻、取得できた実行時間を表示します。複数アプリのトースト重複調整は含みません。
+
 ---
 
 ## 現在のステータス
@@ -68,7 +70,7 @@ Navisworks は MCP コマンドごとに 1 枚のアクティビティカード�
 * `nwd_import_model` *(書き込み)* — 開いているドキュメントにモデルを取り込みます。`append`（既定）は別モデルとして追加し、`merge` は結合します。
 
 ### 3. クエリ/読み取りツール (8)
-* `nwd_health_check` — アクティブセッションのステータスとハートビートを確認します。
+* `nwd_health_check` — ホスト／ドキュメント状態、実行中のサーバー／プラグインのバージョン、ビルドIDと一致状態を確認します。既定はオフライン。`check_updates=true` は両コンポーネントを公式の安定版と比較します。ホスト不在でもサーバーIDを返します（`ok:false`、`host_connected:false`）。
 * `nwd_get_document_info` — アクティブなドキュメント名、ファイルパス、モデル数を取得します。
 * `nwd_get_model_statistics` — 要素数、モデル数、選択数を取得します。
 * `nwd_get_model_tree` — 制限付きモデルツリーのノード階層を取得します。
@@ -110,6 +112,18 @@ Navisworks は MCP コマンドごとに 1 枚のアクティビティカード�
 
 ---
 
+## ランタイム health と更新
+
+ターゲット選択後、セッション開始時に `nwd_health_check(check_updates=true)` を1回呼び、安定版の更新を確認します。ネットワークが利用不可／許可されていない場合は既定のオフライン確認を使い、not checked/unknownのままにします。その後の通常確認はオフラインです。`setup_gateway`／`setup_plugin` はロード済みアセンブリのIDです。SHA-256は取得時のディスク上のファイルを観察するだけで、メモリの再ロードや発行元の信頼性を証明しません。IDのない旧プラグインはバージョン／ビルドを `unknown` とします。ホスト確認はUIスレッドを使うため、Navisworksがビジーならタイムアウトすることがあります。
+
+`check_updates=true` は1つの公式安定版とタグのリビジョンを、合計5秒のネットワーク予算で確認します。`update.components.server` と `.plugin` を個別に確認してください。同じバージョンだけでは不十分で、証拠不足は `unknown` のままです。`checked` はリリース検索の成功だけを意味します。コンポーネントの `update_available` は意味的バージョンの比較で、falseやnull通知はリリースID一致の証明ではありません。ソースリビジョンの比較も成果物のバイト検証ではありません。
+
+`update.notification` のコードと `agent_action` を確認します。`NEW_RELEASE_AVAILABLE` は新バージョン、`RELEASE_REVIEW_REQUIRED`／`RELEASE_IDENTITY_UNVERIFIED` は証拠のレビュー、`LOCAL_VERSION_AHEAD` は新しいローカル版の案内です。`UPDATE_CHECK_UNAVAILABLE` は外部の `lookup_reason` であり、ローカルの異常やインストール承認要求ではありません。`protected_components` を保持し、`protected_component_reasons` を説明してください。新しいローカル版はダウングレードしません。`unobserved_components` は接続／ランタイム確認が必要で、ホスト終了や破損を意味しません。`identity_observed` と `comparison_reason` はランタイム証拠不足とリリース検索失敗を区別します。
+
+`update_guidance.mode` は `check_only`、`retry_check`、`review`、`none`、`prepare_update` です。`bundle_update_proposal_allowed=true` の `prepare_update` だけがインストール手順と承認要求を返します。既存の承認は再利用します。他のモードは確認／報告／レビューだけです。新しいローカル版、未解決の相手ビルド、タグ検索失敗や未観測の相手があれば全体ZIPの提案を止めます。healthはパッケージ取得、インストール、再起動、文書保存／終了を行いません。[AGENTS.md](AGENTS.md) のプレビュー、承認、バックアップと検証に従ってください。現在のインストーラーはbundle+serverの原子的ロールバックを提供しません。開発ビルドを自動置換しないでください。
+
+Navisworks再起動とクライアント再接続後、**同じ接続**の新しい `initialize.serverInfo` と `tools/list` のメタデータ／スキーマ／アノテーションを `client_verification` と比較します。サーバーはクライアントのキャッシュ更新を確認できません。クライアント側の証拠がなければ未検証です。
+
 ## セーフティ設定
 
 ### 読み取り専用モード
@@ -122,7 +136,7 @@ Navisworks は MCP コマンドごとに 1 枚のアクティビティカード�
 **Record** は**既定でオフ**です。リボンのトグル、Status のチェック、`nwdmcp.config.json` の `recordCalls`、`BIMWRIGHT_NWD_RECORD_CALLS` は、すべてのツールに対する一つのスイッチです。オンの間、各呼び出しは設定ファイルの隣の `mcp-calls.jsonl` に追記されます。`send_code` のソースは書かれず、行には `code_length` と `code_sha256` が入ります。
 
 ### 権限と auto mode
-`nwd_send_code` を除くすべてのツールが MCP アノテーション（`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint=false`）を宣言しています。Claude Desktop はこれを使い、読み取りツールは一度許可すれば済み、破壊的なツール（`nwd_open_file`, `nwd_hide_items`, `nwd_unhide_all`, `nwd_run_baked_tool`, `nwd_dismiss_bake_suggestion`）は毎回確認します。
+`nwd_send_code` を除くすべてのツールが MCP アノテーション（`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`）を宣言しています。任意の更新確認でGitHubに接続する `nwd_health_check` 以外はopen-worldがfalseです。healthは読み取り専用で非破壊的です。Claude Desktop はこれを使い、読み取りツールは一度許可すれば済み、破壊的なツール（`nwd_open_file`, `nwd_hide_items`, `nwd_unhide_all`, `nwd_run_baked_tool`, `nwd_dismiss_bake_suggestion`）は毎回確認します。
 
 Claude Code の auto mode は MCP 呼び出しごとに分類器でチェックします。読み取り専用ツールでこのチェックを省くには、`.claude/settings.json` の `permissions.allow` に追加してください（MCP エントリ名が `nwd-mcp` 以外なら置き換えてください）：
 
@@ -170,6 +184,10 @@ ToolBaker の SQLite ストレージ（`bake.db`）と使用状況監査ログ�
 ツールの結果はコンパクトな JSON です。64 KiB を超えるとサーバーは結果に `_response_warning` フィールドを追加します（256 KiB 超でさらに強い警告）。1 MiB の予算を超えると `RESPONSE_TOO_LARGE` で拒否されます——完了済みの書き込みツールは失敗を装わず、圧縮された成功サマリー（`response_compacted`、`mutation_applied`）を返します。
 4 つのツールは `output=file` を受け付け、完全な結果を同一マシンのローカルファイルに書き出してパス・スキーマ・プレビューを返します：`nwd_get_model_tree`（JSON）、`nwd_batch_get_properties`（SQLite）、`nwd_find_items_by_name`（NDJSON）、`nwd_run_baked_tool`（形式は自動判定）。`nwd_send_code` に `output` パラメーターはなく、1 MiB を超える出力は同じ方式で自動的にファイルへ退避します。
 Spill ファイルは `%LOCALAPPDATA%\Bimwright\nwd-mcp\spill` に保存され、24 時間保持・最大 50 ファイルで、アンインストール時に削除されます。
+
+## ベンチマーク
+
+Navisworks Manage 2025 上の 33 ツールすべての所要時間、結果サイズ、推定トークン、サイズポリシーの結果: [docs/benchmarks/2026-09-30-navisworks-manage-2025.md](docs/benchmarks/2026-09-30-navisworks-manage-2025.md)。
 
 ---
 

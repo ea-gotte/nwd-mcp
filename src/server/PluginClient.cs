@@ -22,13 +22,17 @@ public sealed class PluginClient
 {
     private readonly NwdMcpConfig _config;
     private readonly TargetRegistry _registry;
+    private readonly JObject _gatewayIdentity;
     private TargetDescriptor? _current;
 
     public PluginClient(NwdMcpConfig config)
     {
         _config = config;
         _registry = new TargetRegistry(config.DescriptorDirectory);
+        _gatewayIdentity = RuntimeIdentity.Capture(typeof(PluginClient).Assembly, "gateway");
     }
+
+    internal JObject GatewayIdentity => (JObject)_gatewayIdentity.DeepClone();
 
     public IReadOnlyList<TargetDescriptor> ListTargets() => _registry.List();
 

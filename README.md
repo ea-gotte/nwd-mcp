@@ -30,6 +30,8 @@
 
 Navisworks shows one activity card for MCP commands. Toasts are on by default and stay up for 20 seconds after the latest result (10, 20, 30, or 60). Hover pauses the card; leaving it starts the selected interval again. A deliberate hover smoothly expands a compact three-row view of the current card's individually bordered outcomes (tool, result, success/failure and local completion time in 24-hour `HH:mm:ss`). Every outcome in that card is retained, oldest above newest; the view starts at the latest three, and scrolling up reaches earlier calls through a thin RVT-style scrollbar. Leaving smoothly collapses it. Incoming outcomes appear immediately: at the bottom, the view follows the newest calls; while reading older calls, it preserves your scroll position. Returning to the bottom resumes following. The preview works with branding off and respects reduced motion. These length-limited summaries live only in memory and are discarded when the card closes or resets; they do not enable Record or retain raw requests, response JSON or script source. The BIMwright wordmark stays off unless Show branding is turned on. `nwd_health_check` does not appear on the card. The **Bimwright** ribbon tab has **Toasts**, **Toast Brand**, **Record**, and **Status**. **Record** is off until you turn it on; it then appends every tool call to `%LOCALAPPDATA%\Bimwright\nwd-mcp\mcp-calls.jsonl`. `send_code` is stored as a length and SHA-256, not the script. Settings live in `%LOCALAPPDATA%\Bimwright\nwd-mcp\nwdmcp.config.json`. `BIMWRIGHT_NWD_ENABLE_TOAST` and `BIMWRIGHT_NWD_RECORD_CALLS` override those switches at the next launch.
 
+**Status → toast position:** choose horizontal Left/Right and vertical Top/Bottom independently (default: top-left). Changes apply and save immediately; changing the corner clears any saved drag offset. Enable **Allow dragging the toast** to drag its title row; a normal click still dismisses the card. Disabling drag returns to the selected corner without deleting the saved position; re-enabling restores it. **Reset position** removes the offset. Positions are stored relative to the Navisworks window in DIP and clamped to its monitor's work area. Bottom anchors expand upward; if space is insufficient, expansion uses the opposite side. Motion respects the Windows animation setting. A save failure is reported inline in Status while the new preference remains active for this session. Latest-tool and outcome tooltips include the sanitized result, status, completion time and measured duration when available. This does not coordinate overlapping toasts from different apps.
+
 ---
 
 ## Current Status
@@ -43,7 +45,7 @@ Navisworks shows one activity card for MCP commands. Toasts are on by default an
 
 > **Note:** The plug-in handler layer uses real Navisworks .NET API calls (not stubs or fabricated
 > data) and has been exercised against a live Navisworks Manage instance.
-> for the first-run checklist.
+> The first-run checklist is [docs/testing/manual-smoke.md](docs/testing/manual-smoke.md).
 
 ---
 
@@ -87,7 +89,7 @@ A default launch registers every toolset: **33 tools**. `--read-only` leaves **2
 * `nwd_import_model` *(Write)* — Bring a model into the open document. `append` (default) adds it; `merge` combines it.
 
 ### 3. Query/Read Tools (8)
-* `nwd_health_check` — Check active session status and heartbeat.
+* `nwd_health_check` — Probe host/document state and loaded server/plugin versions, build ids and alignment. Offline by default; optional `check_updates=true` compares both components with the latest official stable release and tag revision. No host still returns server identity with `ok:false`, `host_connected:false`.
 * `nwd_get_document_info` — Retrieve active document name, file path, and model count.
 * `nwd_get_model_statistics` — Retrieve counts of elements, models, and selections.
 * `nwd_get_model_tree` — Retrieve a bounded model tree node hierarchy.
@@ -129,6 +131,18 @@ A default launch registers every toolset: **33 tools**. `--read-only` leaves **2
 
 ---
 
+## Runtime health and updates
+
+Start each Navisworks session with one `nwd_health_check(check_updates=true)` call after selecting the target, so the agent discovers newer stable releases. If network access is unavailable or disallowed, use the offline default and leave update status not checked/unknown. Later routine probes stay offline. `setup_gateway`/`setup_plugin` describe loaded assemblies; their SHA-256 observes the disk file at capture time, not loaded memory. Version/revision alignment is not proof of compatibility or publisher trust. Legacy plugins without identity report unknown version/build evidence. The host probe uses the UI thread and can time out while Navisworks is busy.
+
+`check_updates=true` uses one official release baseline and a shared 5-second network budget. Inspect both `update.components.server` and `.plugin`: matching versions alone are insufficient, and unavailable evidence remains `unknown`. `checked` confirms release lookup, not that both components are current. Per-component `update_available` compares semantic versions; the overall flag is false only when both versions/revisions match, true when a newer stable version exists for either component, and null otherwise. Source-revision comparison does not verify artifact bytes.
+
+Inspect `update.notification` and follow `agent_action`. Codes distinguish `NEW_RELEASE_AVAILABLE`, `RELEASE_REVIEW_REQUIRED`, `RELEASE_IDENTITY_UNVERIFIED`, `UPDATE_CHECK_UNAVAILABLE` and informational `LOCAL_VERSION_AHEAD`. External lookup failures report `lookup_reason` without claiming a local runtime fault or requesting installation authorization. Preserve `protected_components` with their `protected_component_reasons`; a newer local component must not be downgraded. `unobserved_components` need connection/runtime evidence, not an assumption that the host is closed or a known build is corrupt. `identity_observed` and `comparison_reason` distinguish missing runtime metadata from unavailable release evidence. Null notification and per-component semantic `update_available=false` do not prove release identity.
+
+`update_guidance.mode` is `check_only`, `retry_check`, `review`, `none` or `prepare_update`. Only `prepare_update`, with `bundle_update_proposal_allowed=true`, returns installation steps and requires authorization (reuse existing permission). Other modes contain only check/report/review actions. A newer local component with an older peer, unresolved peer build, failed tag lookup or unobserved peer blocks the full ZIP proposal. Health never downloads packages, installs, saves/closes documents or restarts anything. Follow [AGENTS.md](AGENTS.md) for preview, authorization, backups and verification; the current installer does not provide atomic bundle+server rollback. Do not automatically replace development builds.
+
+After restarting Navisworks and reconnecting the MCP client, compare `initialize.serverInfo` and fresh `tools/list` runtime metadata/schema/annotations on that same connection with health's `client_verification`. The server cannot prove the client refreshed its cache; absent client evidence stays unverified.
+
 ## Safety Configurations
 
 ### Read-Only Mode
@@ -141,7 +155,7 @@ Strict read-only mode can be enforced via the `--read-only` flag or the `BIMWRIG
 **Record** is **off by default**. The ribbon toggle, the Status checkbox, `recordCalls` in `nwdmcp.config.json`, and `BIMWRIGHT_NWD_RECORD_CALLS` share one switch for every tool. While it is on, each call is appended to `mcp-calls.jsonl` next to that config file. The `send_code` script is not written; the line stores `code_length` and `code_sha256`.
 
 ### Permissions & auto mode
-Every tool except `nwd_send_code` declares MCP annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint=false`). Claude Desktop uses them: read tools can be allowed once, and destructive tools (`nwd_open_file`, `nwd_hide_items`, `nwd_unhide_all`, `nwd_run_baked_tool`, `nwd_dismiss_bake_suggestion`) always ask.
+Every tool except `nwd_send_code` declares MCP annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`). Open-world is false except for `nwd_health_check`, whose optional update check contacts GitHub; health remains read-only and non-destructive. Claude Desktop uses them: read tools can be allowed once, and destructive tools (`nwd_open_file`, `nwd_hide_items`, `nwd_unhide_all`, `nwd_run_baked_tool`, `nwd_dismiss_bake_suggestion`) always ask.
 
 Claude Code's auto mode checks each MCP call with a classifier. To skip that check for the read-only tools, add them to `permissions.allow` in `.claude/settings.json` (replace `nwd-mcp` if your MCP entry uses another name):
 
@@ -189,6 +203,10 @@ ToolBaker sqlite storage (`bake.db`) and usage audit logs (`audit.jsonl`) are pe
 Tool results are compact JSON. Over 64 KiB the server adds a `_response_warning` field to the result (stronger above 256 KiB); past the 1 MiB budget a result is rejected with `RESPONSE_TOO_LARGE` — except a completed write tool, which returns a compacted success summary (`response_compacted`, `mutation_applied`) instead of a false failure.
 Four tools accept `output=file` to write the full result to a local same-machine file and return its path, schema and a preview: `nwd_get_model_tree` (JSON), `nwd_batch_get_properties` (SQLite), `nwd_find_items_by_name` (NDJSON) and `nwd_run_baked_tool` (auto-detected format). `nwd_send_code` has no `output` parameter; output above 1 MiB auto-spills the same way.
 Spill files live under `%LOCALAPPDATA%\Bimwright\nwd-mcp\spill`, are kept 24 hours, capped at 50 files, and removed on uninstall.
+
+## Benchmark
+
+Per-tool duration, result size, estimated tokens and size-policy outcome for all 33 tools on Navisworks Manage 2025: [docs/benchmarks/2026-09-30-navisworks-manage-2025.md](docs/benchmarks/2026-09-30-navisworks-manage-2025.md).
 
 ---
 

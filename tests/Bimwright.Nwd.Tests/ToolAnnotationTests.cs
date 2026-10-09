@@ -41,7 +41,7 @@ public sealed class ToolAnnotationTests
             Assert.True(a!.ReadOnlyHint.HasValue, $"{tool.Name} ReadOnly");
             Assert.True(a.DestructiveHint.HasValue, $"{tool.Name} Destructive");
             Assert.True(a.IdempotentHint.HasValue, $"{tool.Name} Idempotent");
-            Assert.False(a.OpenWorldHint ?? true, $"{tool.Name} OpenWorld must be false");
+            Assert.Equal(tool.Name == "nwd_health_check", a.OpenWorldHint);
         }
     }
 

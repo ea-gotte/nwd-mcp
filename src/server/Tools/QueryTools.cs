@@ -13,7 +13,10 @@ namespace Bimwright.Nwd.Server.Tools;
 public sealed class QueryTools
 {
     private readonly PluginClient _client;
-    public QueryTools(PluginClient client) => _client = client;
+    private readonly ReleaseUpdateCheck _updates;
+    public QueryTools(PluginClient client) : this(client, new ReleaseUpdateCheck()) { }
+    internal QueryTools(PluginClient client, ReleaseUpdateCheck updates)
+    { _client = client; _updates = updates; }
 
     [McpServerTool(Name = "nwd_get_document_info", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false), Description("Get the active Navisworks document title, path, and model count.")]
     public Task<string> GetDocumentInfo(CancellationToken ct) => Call("get_document_info", new JObject(), ct);
@@ -56,8 +59,38 @@ public sealed class QueryTools
         return Call("find_items_by_name", new JObject { ["name"] = name, ["exact"] = exact, ["max_items"] = maxItems }, ct);
     }
 
-    [McpServerTool(Name = "nwd_health_check", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false), Description("Ping the current Navisworks plug-in: year, process id, document state.")]
-    public Task<string> HealthCheck(CancellationToken ct) => Call("health_check", new JObject(), ct);
+    [McpServerTool(Name = "nwd_health_check", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = true),
+     Description("At session start select the intended target, then call nwd_health_check(check_updates=true) once. Routine calls stay offline by default; not_checked/unknown never means up to date. Probes host/document state and loaded server/plugin versions, build ids and alignment. Inspect update.components and report update.notification code/message according to agent_action. UPDATE_CHECK_UNAVAILABLE describes the external lookup_reason, not a local identity fault; no installation authorization is requested. LOCAL_VERSION_AHEAD is informational. Preserve protected_components and explain protected_component_reasons; unobserved_components require connection/runtime observation, not a warning about a known loaded build. Follow update_guidance.mode: only prepare_update, with bundle_update_proposal_allowed=true, contains installation steps and needs installation authorization (reuse existing permission). Other modes contain only check/review steps. No plugin returns server identity with ok:false and host_connected:false. Matching revisions do not verify artifact bytes, compatibility or publisher trust; never downgrade an ahead_of_release component or automatically replace a development build. After reconnect, compare fresh initialize serverInfo and tools/list runtime metadata/schema/annotations with client_verification; the server cannot prove client cache refresh. The host probe uses the UI thread and can time out while Navisworks is busy. Read-only; never downloads packages, installs, saves documents or restarts processes.")]
+    public async Task<string> HealthCheck(CancellationToken ct = default, bool check_updates = false)
+    {
+        JObject data;
+        var connected = false;
+        try
+        {
+            data = await _client.SendAsync("health_check", new JObject(), ct) as JObject
+                ?? throw new NwdGatewayException("API_ERROR", "The plugin returned an invalid health response.");
+            connected = true;
+        }
+        catch (NwdGatewayException ex)
+        {
+            ct.ThrowIfCancellationRequested();
+            data = new JObject { ["ok"] = false, ["error"] = new JObject { ["code"] = ex.Code, ["message"] = ex.Message } };
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or System.Net.Sockets.SocketException or JsonException)
+        {
+            ct.ThrowIfCancellationRequested();
+            data = new JObject { ["ok"] = false, ["error"] = new JObject
+                { ["code"] = "TARGET_UNAVAILABLE", ["message"] = "Health probe failed: " + ex.Message } };
+        }
+        var gateway = _client.GatewayIdentity;
+        var plugin = connected ? data["setup_plugin"] as JObject : null;
+        HealthRuntimeInfo.Enrich(data, gateway, connected);
+        data["update"] = check_updates
+            ? await _updates.CheckAsync(gateway, plugin, ct)
+            : ReleaseUpdateCheck.NotChecked(gateway, plugin);
+        data["update_guidance"] = HealthRuntimeInfo.UpdateGuidance((JObject)data["update"]!);
+        return JsonConvert.SerializeObject(data, Formatting.None);
+    }
 
     private async Task<string> Call(string command, JObject p, CancellationToken ct)
     {

@@ -12,7 +12,7 @@ public static partial class NwdCommandRegistry
         var dict = new Dictionary<string, INwdCommand>(StringComparer.OrdinalIgnoreCase);
         void Add(INwdCommand cmd) => dict.Add(cmd.Name, cmd);
 
-        Add(new HealthCheckHandler());
+        Add(new HealthCheckHandler(options.NavisworksYear));
         Add(new ListRecentFilesHandler());
         Add(new OpenFileHandler());
         Add(new ImportModelHandler());
