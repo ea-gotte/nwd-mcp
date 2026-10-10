@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Bimwright.Nwd.Server;
 using Bimwright.Nwd.Server.Tools;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,31 +16,71 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
 builder.Services.AddSingleton(config);
 builder.Services.AddSingleton<ServerState>();
-builder.Services.AddSingleton<PluginClient>();
+// Capture the running gateway before initialize/tools/list can be served.
+var pluginClient = new PluginClient(config);
+builder.Services.AddSingleton(pluginClient);
+
+var responseBudget = ResponseBudget.CreateDefault();
 
 var mcp = builder.Services
-    .AddMcpServer(o => o.ServerInstructions = ServerInstructions.Text)
-    .WithStdioServerTransport();
-mcp = Program.RegisterToolsets(mcp, Program.ResolveToolTypesForRegistration(config));
+    .AddMcpServer(o =>
+    {
+        o.ServerInstructions = ServerInstructions.Text;
+        o.ServerInfo = new ModelContextProtocol.Protocol.Implementation
+        {
+            Name = "nwd-mcp", Title = "Navisworks MCP", Version = Program.ServerInformationalVersion,
+            Description = "Model Context Protocol gateway for Autodesk Navisworks Manage 2022-2027",
+            WebsiteUrl = "https://github.com/bimwright/nwd-mcp"
+        };
+    })
+    .WithStdioServerTransport()
+    .WithRequestFilters(f => f.AddCallToolFilter(next => async (request, ct) =>
+        ToolErrorFlag.Apply(responseBudget.Apply(request.Params?.Name, request.Params?.Arguments, await next(request, ct)))));
+mcp = Program.RegisterToolsets(mcp, Program.ResolveToolTypesForRegistration(config), pluginClient.GatewayIdentity);
 
 await builder.Build().RunAsync();
 
 internal static partial class Program
 {
-    internal static IMcpServerBuilder RegisterToolsets(IMcpServerBuilder mcp, IEnumerable<Type> toolTypes)
+    internal static readonly string ServerInformationalVersion =
+        Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+    internal static readonly string ServerVersion = ServerInformationalVersion.Split('+')[0];
+
+    internal static IMcpServerBuilder RegisterToolsets(IMcpServerBuilder mcp, IEnumerable<Type> toolTypes,
+        Newtonsoft.Json.Linq.JObject? gatewayIdentity = null)
     {
         foreach (var toolType in toolTypes)
         {
-            mcp = RegisterToolType(mcp, toolType);
+            mcp = RegisterToolType(mcp, toolType, gatewayIdentity);
         }
 
         return mcp;
     }
 
-    private static IMcpServerBuilder RegisterToolType(IMcpServerBuilder mcp, Type toolType)
+    private static IMcpServerBuilder RegisterToolType(IMcpServerBuilder mcp, Type toolType,
+        Newtonsoft.Json.Linq.JObject? gatewayIdentity)
     {
         if (toolType == typeof(MetaTools)) return mcp.WithTools<MetaTools>();
-        if (toolType == typeof(QueryTools)) return mcp.WithTools<QueryTools>();
+        if (toolType == typeof(FileTools)) return mcp.WithTools<FileTools>();
+        if (toolType == typeof(FileWriteTools)) return mcp.WithTools<FileWriteTools>();
+        if (toolType == typeof(QueryTools))
+        {
+            foreach (var method in toolType.GetMethods())
+            {
+                var attribute = method.GetCustomAttribute<McpServerToolAttribute>();
+                if (attribute == null) continue;
+                var tool = McpServerTool.Create(method,
+                    context => ActivatorUtilities.CreateInstance(context.Services!, toolType));
+                if (attribute.Name == "nwd_health_check" && gatewayIdentity is not null)
+                    tool.ProtocolTool.Meta = new System.Text.Json.Nodes.JsonObject
+                    {
+                        [HealthRuntimeInfo.ClientRuntimeMetadataKey] = System.Text.Json.Nodes.JsonNode.Parse(
+                            HealthRuntimeInfo.ClientRuntime(gatewayIdentity).ToString()),
+                    };
+                mcp.WithTools(new[] { tool });
+            }
+            return mcp;
+        }
         if (toolType == typeof(SelectionTools)) return mcp.WithTools<SelectionTools>();
         if (toolType == typeof(SelectionWriteTools)) return mcp.WithTools<SelectionWriteTools>();
         if (toolType == typeof(SetsTools)) return mcp.WithTools<SetsTools>();
@@ -60,6 +101,8 @@ internal static partial class Program
         void Add(string toolset, Type t) { if (ts.Contains(toolset)) types.Add(t); }
 
         Add("meta",            typeof(MetaTools));
+        Add("files",           typeof(FileTools));
+        Add("files_write",     typeof(FileWriteTools));
         Add("query",           typeof(QueryTools));
         Add("selection",       typeof(SelectionTools));
         Add("selection_write", typeof(SelectionWriteTools));

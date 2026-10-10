@@ -8,6 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="../../src/shared/Views/Toast/ActivityHistory.cs" Link="ActivityHistory.cs" />
+    <Compile Include="../../src/shared/Infrastructure/SavedItemResolver.cs" Link="SavedItemResolver.cs" />
+    <Compile Include="../../src/shared/Views/Toast/ActivityAggregator.Nwd.cs" Link="ActivityAggregator.Nwd.cs" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.6.2" />
@@ -29,6 +32,22 @@
     <Compile Include="..\..\src\shared\Infrastructure\INwdCommand.cs" />
     <Compile Include="..\..\src\shared\Infrastructure\CommandDispatcher.cs" />
     <Compile Include="..\..\src\shared\Infrastructure\NwdCommandContext.cs" />
+    <Compile Include="..\..\src\shared\Config\PluginSettings.cs" Link="PluginSettings.cs" />
+    <Compile Include="..\..\src\shared\Config\ToastPositionOptions.cs" Link="ToastPositionOptions.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastPlacement.cs" Link="ToastPlacement.cs" />
+    <Compile Include="..\..\src\shared\Localization\L.cs" Link="L.cs" />
+    <Compile Include="..\..\src\shared\Security\PathAllowlist.cs" Link="PathAllowlist.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ActivityAggregator.cs" Link="ActivityAggregator.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastActivityEntry.cs" Link="ToastActivityEntry.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastActivityLog.cs" Link="ToastActivityLog.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ClientPresence.cs" Link="ClientPresence.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\McpToastViewModel.cs" Link="McpToastViewModel.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastCommands.cs" Link="ToastCommands.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToastContentBuilder.cs" Link="ToastContentBuilder.cs" />
+    <Compile Include="..\..\src\shared\Views\Toast\ToolNameFormatter.cs" Link="ToolNameFormatter.cs" />
+    <Compile Include="..\..\src\shared\Logging\NwdCallLog.cs" Link="NwdCallLog.cs" />
+    <Compile Include="..\..\src\shared\Files\LocalModelFile.cs" Link="LocalModelFile.cs" />
+    <Compile Include="..\..\src\shared\Files\NavisworksRecentFiles.cs" Link="NavisworksRecentFiles.cs" />
   </ItemGroup>
 
 </Project>

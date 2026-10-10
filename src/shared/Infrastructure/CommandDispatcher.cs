@@ -24,7 +24,7 @@ public sealed class CommandDispatcher
         if (!cmd.IsReadOnly && ctx.ReadOnly)
             return NwdCommandResult.Fail(env.Id, "READ_ONLY", $"{env.Command} is a write command and the server is read-only", meta);
         if (env.Command == "send_code" && !ctx.EnableSendCode)
-            return NwdCommandResult.Fail(env.Id, "SEND_CODE_DISABLED", "send_code is disabled. Enable it on the server (--enable-send-code) and the plug-in (BIMWRIGHT_NWD_PLUGIN_ENABLE_SEND_CODE=1).", meta);
+            return NwdCommandResult.Fail(env.Id, "SEND_CODE_DISABLED", "send_code is disabled in this Navisworks session. Leave BIMWRIGHT_NWD_PLUGIN_ENABLE_SEND_CODE unset, or set it to 1.", meta);
 
         try
         {
@@ -32,7 +32,12 @@ public sealed class CommandDispatcher
             Normalize(env, ctx, result, started);
             var serialized = JsonConvert.SerializeObject(result.Data);
             if (!ResponseSizeGuard.Check(serialized, _maxResponseBytes, out var sizeError))
-                return NwdCommandResult.Fail(env.Id, sizeError!.Code, sizeError.Message, result.Meta);
+            {
+                var message = cmd.IsReadOnly
+                    ? sizeError!.Message
+                    : sizeError!.Message + " The command already ran; do not blindly retry a mutation.";
+                return NwdCommandResult.Fail(env.Id, sizeError!.Code, message, result.Meta);
+            }
             return result;
         }
         catch (Exception ex)

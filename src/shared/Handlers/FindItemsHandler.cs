@@ -52,11 +52,14 @@ public sealed class FindItemsHandler : INwdCommand
         NW.ModelItemCollection matches = search.FindAll(doc, false);
 
         var itemIds = new JArray();
+        var ids = new ModelItemIdMap(doc);
         int count = 0;
+        var truncated = false;
         foreach (NW.ModelItem mi in matches)
         {
             if (count >= maxItems) break;
-            var id = ModelItemHelper.GetModelItemId(mi, doc);
+            if (ctx.PastDeadline) { truncated = true; break; }
+            var id = ids.IdOf(mi);
             if (!string.IsNullOrEmpty(id))
             {
                 itemIds.Add(id);
@@ -65,6 +68,7 @@ public sealed class FindItemsHandler : INwdCommand
         }
 
         var data = new JObject { ["item_ids"] = itemIds };
+        if (truncated) data["truncated"] = "deadline";
         return NwdCommandResult.Success(System.Guid.Empty, data, meta);
     }
 }

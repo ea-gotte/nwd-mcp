@@ -14,7 +14,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>bimwright-nwd</ToolCommandName>
     <PackageId>Bimwright.Nwd.Server</PackageId>
-    <Version>0.1.2</Version>
+    <Version>1.0.1</Version>
     <Authors>Khoa Le</Authors>
     <Description>MCP gateway for Autodesk Navisworks Manage 2022-2027.</Description>
     <PackageProjectUrl>https://github.com/bimwright/nwd-mcp</PackageProjectUrl>
@@ -36,6 +36,7 @@
     <Compile Include="..\shared\Infrastructure\NwdCommandResult.cs" LinkBase="Shared\Infrastructure" />
     <Compile Include="..\shared\Infrastructure\NwdCommandCatalog.cs" LinkBase="Shared\Infrastructure" />
     <Compile Include="..\shared\Infrastructure\ResponseSizeGuard.cs" LinkBase="Shared\Infrastructure" />
+    <Compile Include="..\shared\Infrastructure\RuntimeIdentity.cs" LinkBase="Shared\Infrastructure" />
     <Compile Include="..\shared\Infrastructure\TargetDescriptor.cs" LinkBase="Shared\Infrastructure" />
     <Compile Include="..\shared\Infrastructure\TargetRegistry.cs" LinkBase="Shared\Infrastructure" />
     <Compile Include="..\shared\Security\SecretMasker.cs" LinkBase="Shared\Security" />

@@ -15,17 +15,17 @@ public sealed class SelectionTools
     private readonly PluginClient _client;
     public SelectionTools(PluginClient client) => _client = client;
 
-    [McpServerTool(Name = "nwd_get_current_selection"), Description("Get a list of currently selected model item ids.")]
+    [McpServerTool(Name = "nwd_get_current_selection", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false), Description("Get a list of currently selected model item ids.")]
     public async Task<string> GetCurrentSelection(CancellationToken ct)
     {
         try
         {
             var data = await _client.SendAsync("get_current_selection", new JObject(), ct);
-            return JsonConvert.SerializeObject(data, Formatting.Indented);
+            return JsonConvert.SerializeObject(data, Formatting.None);
         }
         catch (NwdGatewayException ex)
         {
-            return JsonConvert.SerializeObject(new { ok = false, error = new { code = ex.Code, message = ex.Message } }, Formatting.Indented);
+            return JsonConvert.SerializeObject(new { ok = false, error = new { code = ex.Code, message = ex.Message } }, Formatting.None);
         }
     }
 }

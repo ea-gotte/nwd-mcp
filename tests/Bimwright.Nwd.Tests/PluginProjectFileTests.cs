@@ -42,6 +42,9 @@ public sealed class PluginProjectFileTests
             var assemblyName = propertyGroup.Element("AssemblyName")?.Value;
             Assert.Equal($"Bimwright.Nwd.Plugin.Navis{year % 100}", assemblyName);
 
+            // Runtime health must observe real SDK-generated version/revision attributes.
+            Assert.Equal("true", propertyGroup.Element("GenerateAssemblyInfo")?.Value);
+
             var defineConstants = propertyGroup.Element("DefineConstants")?.Value;
             Assert.NotNull(defineConstants);
             Assert.Contains($"NAVIS{year}", defineConstants);

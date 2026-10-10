@@ -39,7 +39,7 @@ public sealed class GetCurrentViewpointHandler : INwdCommand
             ["position"] = pos,
             ["rotation"] = rot,
             ["projection"] = vp.Projection.ToString(),
-            ["focal_distance"] = vp.FocalDistance,
+            ["focal_distance"] = vp.HasFocalDistance ? new JValue(vp.FocalDistance) : JValue.CreateNull(),
             ["has_lighting"] = vp.HasLighting
         };
         return NwdCommandResult.Success(System.Guid.Empty, data, meta);

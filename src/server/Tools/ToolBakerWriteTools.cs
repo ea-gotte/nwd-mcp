@@ -16,16 +16,22 @@ public sealed class ToolBakerWriteTools
 {
     private readonly PluginClient _client;
     private readonly NwdMcpConfig _config;
+    private readonly TimeProvider _clock;
 
-    public ToolBakerWriteTools(PluginClient client, NwdMcpConfig config)
+    public ToolBakerWriteTools(PluginClient client, NwdMcpConfig config, TimeProvider? clock = null)
     {
         _client = client;
         _config = config;
+        _clock = clock ?? TimeProvider.System;
     }
 
-    [McpServerTool(Name = "nwd_run_baked_tool"), Description("Execute a registered baked tool by name with parameters.")]
-    public async Task<string> RunBakedTool(string name, string paramsJson, CancellationToken ct)
+    [McpServerTool(Name = "nwd_run_baked_tool", ReadOnly = false, Destructive = true, Idempotent = false, OpenWorld = false), Description("Run a registered baked tool by name with parameters. A baked tool can change the open document like any write tool; check its description in nwd_list_baked_tools first. output=file writes the full result to a local same-machine file (%LOCALAPPDATA%\\Bimwright\\nwd-mcp\\spill, kept 24 h) and returns its path, schema and a preview.")]
+    public async Task<string> RunBakedTool(string name, string paramsJson, string output = "inline", CancellationToken ct = default)
     {
+        var invalidOutput = ResponseBudget.InvalidOutput(output);
+        if (invalidOutput != null)
+            return invalidOutput;
+
         JObject parsed;
         try
         {
@@ -33,7 +39,7 @@ public sealed class ToolBakerWriteTools
         }
         catch (JsonException ex)
         {
-            return JsonConvert.SerializeObject(new { ok = false, error = new { code = "INVALID_ARGUMENT", message = "params must be a JSON object: " + ex.Message } }, Formatting.Indented);
+            return JsonConvert.SerializeObject(new { ok = false, error = new { code = "INVALID_ARGUMENT", message = "params must be a JSON object: " + ex.Message } }, Formatting.None);
         }
 
         BakePaths.EnsureDir(_config);
@@ -42,21 +48,21 @@ public sealed class ToolBakerWriteTools
         var record = db.GetRegistryRecord(name);
         if (record == null)
         {
-            return JsonConvert.SerializeObject(new { ok = false, error = new { code = "INVALID_ARGUMENT", message = "baked tool not found: " + name } }, Formatting.Indented);
+            return JsonConvert.SerializeObject(new { ok = false, error = new { code = "INVALID_ARGUMENT", message = "baked tool not found: " + name } }, Formatting.None);
         }
 
         try
         {
             var data = await _client.SendAsync("run_baked_tool", new { name, @params = parsed, tool_record = JObject.FromObject(record) }, ct);
-            return JsonConvert.SerializeObject(data, Formatting.Indented);
+            return JsonConvert.SerializeObject(data, Formatting.None);
         }
         catch (NwdGatewayException ex)
         {
-            return JsonConvert.SerializeObject(new { ok = false, error = new { code = ex.Code, message = ex.Message } }, Formatting.Indented);
+            return JsonConvert.SerializeObject(new { ok = false, error = new { code = ex.Code, message = ex.Message } }, Formatting.None);
         }
     }
 
-    [McpServerTool(Name = "nwd_accept_bake_suggestion"), Description("Accept a suggested workflow to compile it into a verified baked tool.")]
+    [McpServerTool(Name = "nwd_accept_bake_suggestion", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false), Description("Accept a suggested workflow to compile it into a verified baked tool.")]
     public async Task<string> AcceptBakeSuggestion(string suggestionId, string desiredName, CancellationToken ct)
     {
         BakePaths.EnsureDir(_config);
@@ -75,12 +81,12 @@ public sealed class ToolBakerWriteTools
             });
     }
 
-    [McpServerTool(Name = "nwd_dismiss_bake_suggestion"), Description("Dismiss/snooze an active bake suggestion.")]
+    [McpServerTool(Name = "nwd_dismiss_bake_suggestion", ReadOnly = false, Destructive = true, Idempotent = true, OpenWorld = false), Description("Snooze an active bake suggestion for 30 days, removing it from nwd_list_bake_suggestions until then.")]
     public Task<string> DismissBakeSuggestion(string suggestionId, CancellationToken ct)
     {
         BakePaths.EnsureDir(_config);
         using var db = new BakeDb(BakePaths.Db(_config));
         db.Migrate();
-        return Task.FromResult(DismissBakeSuggestionHandler.Handle(db, suggestionId, "snooze_30d"));
+        return Task.FromResult(DismissBakeSuggestionHandler.Handle(db, suggestionId, "snooze_30d", _clock.GetUtcNow()));
     }
 }

@@ -15,10 +15,10 @@ public sealed class SelectionWriteTools
     private readonly PluginClient _client;
     public SelectionWriteTools(PluginClient client) => _client = client;
 
-    [McpServerTool(Name = "nwd_clear_selection"), Description("Clear the active Navisworks selection.")]
+    [McpServerTool(Name = "nwd_clear_selection", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false), Description("Clear the active Navisworks selection.")]
     public Task<string> ClearSelection(CancellationToken ct) => Call("clear_selection", new JObject(), ct);
 
-    [McpServerTool(Name = "nwd_select_items_by_search"), Description("Select items matching name/property filters.")]
+    [McpServerTool(Name = "nwd_select_items_by_search", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false), Description("Select items matching name/property filters.")]
     public Task<string> SelectItemsBySearch(string filtersJson, CancellationToken ct = default)
         => Call("select_items_by_search", new JObject { ["filters"] = JToken.Parse(filtersJson) }, ct);
 
@@ -27,11 +27,11 @@ public sealed class SelectionWriteTools
         try
         {
             var data = await _client.SendAsync(command, p, ct);
-            return JsonConvert.SerializeObject(data, Formatting.Indented);
+            return JsonConvert.SerializeObject(data, Formatting.None);
         }
         catch (NwdGatewayException ex)
         {
-            return JsonConvert.SerializeObject(new { ok = false, error = new { code = ex.Code, message = ex.Message } }, Formatting.Indented);
+            return JsonConvert.SerializeObject(new { ok = false, error = new { code = ex.Code, message = ex.Message } }, Formatting.None);
         }
     }
 }
