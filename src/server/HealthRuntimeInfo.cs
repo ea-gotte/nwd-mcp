@@ -82,7 +82,7 @@ internal static class HealthRuntimeInfo
             ["mode"] = mode,
             ["automatic_update_supported"] = false,
             ["requires_user_authorization"] = mode == "prepare_update",
-            ["documentation_url"] = "https://github.com/bimwright/nwd-mcp/blob/main/AGENTS.md",
+            ["documentation_url"] = "https://github.com/bimwright/nwd-mcp/blob/master/AGENTS.md",
             ["steps"] = steps,
         };
     }
