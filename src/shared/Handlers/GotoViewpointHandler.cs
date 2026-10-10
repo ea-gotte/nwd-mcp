@@ -1,4 +1,6 @@
 #if NAVIS2022 || NAVIS2023 || NAVIS2024 || NAVIS2025 || NAVIS2026 || NAVIS2027
+using System;
+using System.Linq;
 using Bimwright.Nwd.Shared.Infrastructure;
 using Newtonsoft.Json.Linq;
 using NW = Autodesk.Navisworks.Api;
@@ -15,72 +17,25 @@ public sealed class GotoViewpointHandler : INwdCommand
         var meta = new NwdResponseMeta { TargetId = ctx.TargetId, NavisworksYear = ctx.NavisworksYear };
         var doc = NW.Application.ActiveDocument;
         if (doc is null)
-            return NwdCommandResult.Fail(System.Guid.Empty, "NO_DOCUMENT", "no active Navisworks document", meta);
-
-        var viewpointId = (string?)p["viewpoint_id"];
-        if (string.IsNullOrEmpty(viewpointId))
-            return NwdCommandResult.Fail(System.Guid.Empty, "INVALID_ARGUMENT", "viewpoint_id is required", meta);
-
-        var sv = FindSavedViewpoint(doc.SavedViewpoints.RootItem, viewpointId);
+            return NwdCommandResult.Fail(Guid.Empty, "NO_DOCUMENT", "no active Navisworks document", meta);
+        var id = (string?)p["viewpoint_id"];
+        if (string.IsNullOrEmpty(id))
+            return NwdCommandResult.Fail(Guid.Empty, "INVALID_ARGUMENT", "viewpoint_id is required", meta);
+        NW.SavedViewpoint? sv;
+        try
+        {
+            sv = SavedItemResolver.Resolve(doc.SavedViewpoints.RootItem.Children.Cast<NW.SavedItem>(), id!,
+                x => x.DisplayName, x => x is NW.GroupItem g ? g.Children.Cast<NW.SavedItem>() : Enumerable.Empty<NW.SavedItem>(),
+                x => x.Guid) as NW.SavedViewpoint;
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NwdCommandResult.Fail(Guid.Empty, "INVALID_ARGUMENT", ex.Message, meta);
+        }
         if (sv is null)
-            return NwdCommandResult.Fail(System.Guid.Empty, "INVALID_ARGUMENT", $"Saved viewpoint '{viewpointId}' not found", meta);
-
+            return NwdCommandResult.Fail(Guid.Empty, "INVALID_ARGUMENT", $"Saved viewpoint '{id}' not found", meta);
         doc.CurrentViewpoint.CopyFrom(sv.Viewpoint);
-
-        var data = new JObject
-        {
-            ["moved"] = true
-        };
-        return NwdCommandResult.Success(System.Guid.Empty, data, meta);
-    }
-
-    private static NW.SavedViewpoint FindSavedViewpoint(NW.GroupItem root, string name)
-    {
-        if (root is null || string.IsNullOrEmpty(name)) return null;
-
-        if (name.Contains("/"))
-        {
-            var segments = name.Split(new[] { '/' }, System.StringSplitOptions.RemoveEmptyEntries);
-            return FindBySegments(root, segments, 0);
-        }
-
-        foreach (NW.SavedItem item in root.Children)
-        {
-            if (item is NW.SavedViewpoint sv &&
-                string.Equals(sv.DisplayName, name, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return sv;
-            }
-            if (item is NW.GroupItem g)
-            {
-                var hit = FindSavedViewpoint(g, name);
-                if (hit != null) return hit;
-            }
-        }
-        return null;
-    }
-
-    private static NW.SavedViewpoint FindBySegments(NW.GroupItem parent, string[] segments, int segmentIndex)
-    {
-        if (segmentIndex >= segments.Length) return null;
-        var currentSegment = segments[segmentIndex];
-
-        foreach (NW.SavedItem item in parent.Children)
-        {
-            if (string.Equals(item.DisplayName, currentSegment, System.StringComparison.OrdinalIgnoreCase))
-            {
-                if (segmentIndex == segments.Length - 1)
-                {
-                    return item as NW.SavedViewpoint;
-                }
-                if (item is NW.GroupItem childGroup)
-                {
-                    var hit = FindBySegments(childGroup, segments, segmentIndex + 1);
-                    if (hit != null) return hit;
-                }
-            }
-        }
-        return null;
+        return NwdCommandResult.Success(Guid.Empty, new JObject { ["moved"] = true }, meta);
     }
 }
 #endif

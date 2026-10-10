@@ -27,7 +27,7 @@ public sealed class ListViewpointsHandler : INwdCommand
         return NwdCommandResult.Success(System.Guid.Empty, data, meta);
     }
 
-    private static void WalkViewpoints(NW.GroupItem group, string prefix, JArray list)
+    private static void WalkViewpoints(NW.GroupItem group, string prefix, JArray list, string encodedPrefix = "")
     {
         if (group == null || group.Children == null) return;
         foreach (NW.SavedItem si in group.Children)
@@ -37,6 +37,8 @@ public sealed class ListViewpointsHandler : INwdCommand
                 var vpNode = new JObject
                 {
                     ["name"] = prefix + sv.DisplayName,
+                    ["id"] = SavedItemResolver.Id(sv.Guid, encodedPrefix + "/" + SavedItemResolver.Escape(sv.DisplayName)),
+                    ["path"] = "path:" + encodedPrefix + "/" + SavedItemResolver.Escape(sv.DisplayName),
                     ["type"] = "viewpoint"
                 };
                 list.Add(vpNode);
@@ -46,10 +48,13 @@ public sealed class ListViewpointsHandler : INwdCommand
                 var folderNode = new JObject
                 {
                     ["name"] = prefix + g.DisplayName,
+                    ["id"] = SavedItemResolver.Id(g.Guid, encodedPrefix + "/" + SavedItemResolver.Escape(g.DisplayName)),
+                    ["path"] = "path:" + encodedPrefix + "/" + SavedItemResolver.Escape(g.DisplayName),
                     ["type"] = "folder"
                 };
                 list.Add(folderNode);
-                WalkViewpoints(g, prefix + g.DisplayName + "/", list);
+                WalkViewpoints(g, prefix + g.DisplayName + "/", list,
+                    encodedPrefix + "/" + SavedItemResolver.Escape(g.DisplayName));
             }
         }
     }

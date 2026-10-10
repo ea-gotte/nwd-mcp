@@ -180,6 +180,22 @@ ON CONFLICT(id) DO UPDATE SET
         return command.ExecuteNonQuery() == 1;
     }
 
+    public bool TryDismissSuggestion(string id, string? snoozeUntil, string? neverReason, DateTimeOffset now)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+UPDATE suggestions SET state = 'dismissed', snooze_until = $until,
+    never_reason = $reason, updated_at = $now
+WHERE id = $id AND state IN ('open', 'dismissed') AND never_reason IS NULL
+    AND (snooze_until IS NULL OR julianday(snooze_until) <= julianday($now))";
+        Add(command, "$id", id);
+        Add(command, "$until", snoozeUntil);
+        Add(command, "$reason", neverReason);
+        Add(command, "$now", now.ToUniversalTime().ToString("o"));
+        return command.ExecuteNonQuery() == 1;
+    }
+
     public void InsertUsageEvent(UsageEvent usageEvent)
     {
         if (usageEvent == null) throw new ArgumentNullException(nameof(usageEvent));

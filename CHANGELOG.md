@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixed
+- Empty-document camera reads guard `HasFocalDistance` and return `focal_distance: null` instead of throwing.
+- Saved viewpoint/set names containing literal `/` now round-trip. Lists retain `name` and add `id` and `path`; consumers accept these identifiers. Escaped paths start with `path:/`, encode `~` as `~0` and `/` within a segment as `~1`. GUID-less SDK items use the escaped path as their ID. Legacy unambiguous names/paths still work; ambiguous names fail rather than silently selecting the first match.
+- Active ToolBaker lists exclude accepted/archived/permanently dismissed suggestions and current snoozes. Dismiss persists a UTC deadline exactly 30 days ahead, reports it, and repeated snooze calls do not extend it. Expired snoozes become effectively open without mutating data during a read-only listing. Legacy dismissed rows without a deadline stay hidden.
+
 ### Added
 - `nwd_health_check` now reports loaded server/plugin runtime identities, versions, build ids and version/revision alignment. Host failure preserves the running server identity; legacy plugins without identity report unknown evidence. Disk hashes are explicitly scoped to identity capture, not loaded memory or publisher verification.
 - Optional `check_updates` (offline by default; recommended once at session start) compares both components with one official stable release and tag revision using a shared 5-second budget and bounded responses. Missing evidence/failures remain unknown. Notifications distinguish new releases, revision review, unverified identity, external lookup failure and informational newer local versions. `protected_components`/reasons and separate `unobserved_components` prevent unsafe full-bundle proposals. Only `update_guidance.mode=prepare_update` with `bundle_update_proposal_allowed=true` returns installation steps and requests authorization; other modes only check/report/review. Health never downloads packages, installs, saves/closes documents or restarts anything.

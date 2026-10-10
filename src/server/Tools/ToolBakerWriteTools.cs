@@ -16,11 +16,13 @@ public sealed class ToolBakerWriteTools
 {
     private readonly PluginClient _client;
     private readonly NwdMcpConfig _config;
+    private readonly TimeProvider _clock;
 
-    public ToolBakerWriteTools(PluginClient client, NwdMcpConfig config)
+    public ToolBakerWriteTools(PluginClient client, NwdMcpConfig config, TimeProvider? clock = null)
     {
         _client = client;
         _config = config;
+        _clock = clock ?? TimeProvider.System;
     }
 
     [McpServerTool(Name = "nwd_run_baked_tool", ReadOnly = false, Destructive = true, Idempotent = false, OpenWorld = false), Description("Run a registered baked tool by name with parameters. A baked tool can change the open document like any write tool; check its description in nwd_list_baked_tools first. output=file writes the full result to a local same-machine file (%LOCALAPPDATA%\\Bimwright\\nwd-mcp\\spill, kept 24 h) and returns its path, schema and a preview.")]
@@ -85,6 +87,6 @@ public sealed class ToolBakerWriteTools
         BakePaths.EnsureDir(_config);
         using var db = new BakeDb(BakePaths.Db(_config));
         db.Migrate();
-        return Task.FromResult(DismissBakeSuggestionHandler.Handle(db, suggestionId, "snooze_30d"));
+        return Task.FromResult(DismissBakeSuggestionHandler.Handle(db, suggestionId, "snooze_30d", _clock.GetUtcNow()));
     }
 }

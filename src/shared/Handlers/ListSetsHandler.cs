@@ -27,7 +27,7 @@ public sealed class ListSetsHandler : INwdCommand
         return NwdCommandResult.Success(System.Guid.Empty, data, meta);
     }
 
-    private static void WalkSets(NW.GroupItem group, string prefix, JArray list)
+    private static void WalkSets(NW.GroupItem group, string prefix, JArray list, string encodedPrefix = "")
     {
         if (group == null || group.Children == null) return;
         foreach (NW.SavedItem si in group.Children)
@@ -39,6 +39,8 @@ public sealed class ListSetsHandler : INwdCommand
                     var setNode = new JObject
                     {
                         ["name"] = prefix + set.DisplayName,
+                        ["id"] = SavedItemResolver.Id(set.Guid, encodedPrefix + "/" + SavedItemResolver.Escape(set.DisplayName)),
+                        ["path"] = "path:" + encodedPrefix + "/" + SavedItemResolver.Escape(set.DisplayName),
                         ["type"] = "selection",
                         ["count"] = set.ExplicitModelItems.Count
                     };
@@ -49,6 +51,8 @@ public sealed class ListSetsHandler : INwdCommand
                     var setNode = new JObject
                     {
                         ["name"] = prefix + set.DisplayName,
+                        ["id"] = SavedItemResolver.Id(set.Guid, encodedPrefix + "/" + SavedItemResolver.Escape(set.DisplayName)),
+                        ["path"] = "path:" + encodedPrefix + "/" + SavedItemResolver.Escape(set.DisplayName),
                         ["type"] = "search"
                     };
                     list.Add(setNode);
@@ -59,10 +63,13 @@ public sealed class ListSetsHandler : INwdCommand
                 var folderNode = new JObject
                 {
                     ["name"] = prefix + g.DisplayName,
+                    ["id"] = SavedItemResolver.Id(g.Guid, encodedPrefix + "/" + SavedItemResolver.Escape(g.DisplayName)),
+                    ["path"] = "path:" + encodedPrefix + "/" + SavedItemResolver.Escape(g.DisplayName),
                     ["type"] = "folder"
                 };
                 list.Add(folderNode);
-                WalkSets(g, prefix + g.DisplayName + "/", list);
+                WalkSets(g, prefix + g.DisplayName + "/", list,
+                    encodedPrefix + "/" + SavedItemResolver.Escape(g.DisplayName));
             }
         }
     }

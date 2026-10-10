@@ -14,10 +14,12 @@ namespace Bimwright.Nwd.Server.Tools;
 public sealed class ToolBakerTools
 {
     private readonly NwdMcpConfig _config;
+    private readonly TimeProvider _clock;
 
-    public ToolBakerTools(NwdMcpConfig config)
+    public ToolBakerTools(NwdMcpConfig config, TimeProvider? clock = null)
     {
         _config = config;
+        _clock = clock ?? TimeProvider.System;
     }
 
     [McpServerTool(Name = "nwd_list_baked_tools", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false), Description("List all verified, compiled, and registered baked Navisworks tools.")]
@@ -46,7 +48,7 @@ public sealed class ToolBakerTools
         BakePaths.EnsureDir(_config);
         using var db = new BakeDb(BakePaths.Db(_config));
         db.Migrate();
-        return ListBakeSuggestionsHandler.Handle(db);
+        return ListBakeSuggestionsHandler.Handle(db, _clock.GetUtcNow());
     }
 
     [McpServerTool(Name = "nwd_create_bake_issue_draft", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false), Description("Create a GitHub issue draft for a ToolBaker suggestion without submitting it.")]

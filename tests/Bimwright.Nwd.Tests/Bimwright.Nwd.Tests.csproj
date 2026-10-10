@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <Compile Include="../../src/shared/Views/Toast/ActivityHistory.cs" Link="ActivityHistory.cs" />
+    <Compile Include="../../src/shared/Infrastructure/SavedItemResolver.cs" Link="SavedItemResolver.cs" />
     <Compile Include="../../src/shared/Views/Toast/ActivityAggregator.Nwd.cs" Link="ActivityAggregator.Nwd.cs" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
