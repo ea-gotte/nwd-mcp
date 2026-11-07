@@ -17,6 +17,19 @@ schema, .NET 8). `nwd_resolve_ids` is the reference example for new full-API too
 | 7 | `tests/Bimwright.Nwd.Tests/` | a `PluginCases` entry in `ToolShellTests` (pins the envelope), the name in `NwdCommandCatalogTests`, the three `Golden/tools-*.json` lists, the counts in `ToolsListSnapshotTests` and `McpProtocolSmokeTests` |
 | 8 | `README*.md` (4 languages) | read-only tools go in the `permissions.allow` list (`ToolAnnotationTests` checks it) |
 
+## Automating steps 2–4, 7 and 8
+
+`python -I scripts/register-tools.py tools.json` with `[{"command": "...", "handler": "...Handler", "read_only": true}]`
+updates the registry, names, catalog, catalog test, golden lists, tool counts and README allow lists.
+You still write the handler, the wrapper, the `Program.cs` lines for a new class and the `ToolShellTests` case.
+Derive new handlers from `DocumentCommand` (`NwJson.cs`): it resolves the document and maps `CommandFailure` to coded errors.
+
+## Version differences
+
+The plug-in compiles once per year. When an API member is missing in older years (for example
+`VariantData.IsInt64` and `Document.FileVersion` are not in 2024), gate it with `#if NAVIS2026 || NAVIS2027`,
+or read it by reflection when it is called rarely. Build plugin-navis24 and plugin-navis26 before committing.
+
 ## Toolsets and profiles
 
 Put the tool in the toolset for its area (`src/server/ToolsetFilter.cs`). Read tools go in the read half

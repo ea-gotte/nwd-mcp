@@ -180,7 +180,23 @@ Claude Code 的 auto mode 会用分类器检查每次 MCP 调用。若要让只�
       "mcp__nwd-mcp__nwd_list_baked_tools",
       "mcp__nwd-mcp__nwd_list_bake_suggestions",
       "mcp__nwd-mcp__nwd_create_bake_issue_draft",
-      "mcp__nwd-mcp__nwd_resolve_ids"
+      "mcp__nwd-mcp__nwd_resolve_ids",
+      "mcp__nwd-mcp__nwd_list_models",
+      "mcp__nwd-mcp__nwd_get_document_metadata",
+      "mcp__nwd-mcp__nwd_peek_file_info",
+      "mcp__nwd-mcp__nwd_get_scene_bounds",
+      "mcp__nwd-mcp__nwd_get_item_hierarchy",
+      "mcp__nwd-mcp__nwd_get_items_geometry",
+      "mcp__nwd-mcp__nwd_get_visibility_state",
+      "mcp__nwd-mcp__nwd_describe_properties",
+      "mcp__nwd-mcp__nwd_property_value_histogram",
+      "mcp__nwd-mcp__nwd_export_properties_table",
+      "mcp__nwd-mcp__nwd_get_hyperlinks",
+      "mcp__nwd-mcp__nwd_get_grids",
+      "mcp__nwd-mcp__nwd_locate_items_on_grid",
+      "mcp__nwd-mcp__nwd_get_comments",
+      "mcp__nwd-mcp__nwd_list_sheets",
+      "mcp__nwd-mcp__nwd_list_alignments"
     ]
   }
 }

@@ -10,7 +10,7 @@
   <a href="https://github.com/bimwright/nwd-mcp/actions/workflows/build.yml"><img src="https://github.com/bimwright/nwd-mcp/actions/workflows/build.yml/badge.svg" alt="build" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="license" /></a>
   <a href="#capabilities--architecture"><img src="https://img.shields.io/badge/Navisworks-2022--2027-2D9B9B" alt="Navisworks 2022-2027" /></a>
-  <a href="#tool-surface"><img src="https://img.shields.io/badge/MCP-34%20tools-6C47FF" alt="MCP tools" /></a>
+  <a href="#tool-surface"><img src="https://img.shields.io/badge/MCP-50%20tools-6C47FF" alt="MCP tools" /></a>
 </p>
 
 <p align="center">
@@ -76,7 +76,7 @@ Useful flags after wiring: `--read-only` / `BIMWRIGHT_NWD_READ_ONLY=1`, and `--t
 
 ## Tool Surface
 
-A default launch registers every toolset: **34 tools**. `--read-only` leaves **22**. Every tool uses the `nwd_*` prefix.
+A default launch registers every toolset: **50 tools**. `--read-only` leaves **38**. Every tool uses the `nwd_*` prefix.
 
 ### 1. Target/Meta Tools (3)
 * `nwd_list_available_targets` — List all active discovered Navisworks sessions.
@@ -118,8 +118,25 @@ A default launch registers every toolset: **34 tools**. `--read-only` leaves **2
 * `nwd_hide_items` *(Write)* — Hide/show specified elements.
 * `nwd_unhide_all` *(Write)* — Reset all hidden elements to visible.
 
-### 8. Model Tools (1)
-* `nwd_resolve_ids` — Convert items (ids in any form, a set, or the current selection) to every id form: `path` (stale after append/merge/refresh), `pid` (stable path id), `nid` (numeric id), `guid` (instance guid). Paged.
+### 8. Model Tools (17, read-only)
+Item arguments take ids in any form (`0:6:3`, `pid:<model>:<pathId>`, `nid:<model>:<id>`, `guid:<guid>`), a `setId`, `selection="current"`, or `all=true` (optionally `geometryOnly=true`). `idMode` picks the returned id form. Long lists are paged (`limit`, `offset`, `cursor`).
+* `nwd_resolve_ids` — Every id form for each item (use `pid`/`guid` across steps).
+* `nwd_list_models` — Models with source file, creator, GUIDs, units, transform and orientation.
+* `nwd_get_document_metadata` — File version, modified flag, undo/redo, units, orientation, counts, active sheet.
+* `nwd_peek_file_info` — Header properties and sheets of a local NWD/NWF/NWC without opening it.
+* `nwd_get_scene_bounds` — Scene and per-model bounding boxes.
+* `nwd_get_item_hierarchy` — Ancestors and paged children of an item.
+* `nwd_get_items_geometry` — Bounding box, transform and node flags per item.
+* `nwd_get_visibility_state` — Top-most hidden/required/frozen items with counts.
+* `nwd_describe_properties` — Which categories/properties exist in a scope, with counts, types and samples.
+* `nwd_property_value_histogram` — Distinct values of a property with counts and missing items.
+* `nwd_export_properties_table` — CSV (Excel-ready, formula-safe) of items × properties in `%LOCALAPPDATA%\Bimwright
+wd-mcp\exports`.
+* `nwd_get_hyperlinks` — Hyperlinks attached to items.
+* `nwd_get_grids` — Grid systems, levels and lines.
+* `nwd_locate_items_on_grid` — Nearest grid intersection and level for each item.
+* `nwd_get_comments` — Comments on saved viewpoints and sets.
+* `nwd_list_sheets` / `nwd_list_alignments` — Sheets and civil alignments.
 
 ### 9. Escape Hatch Scripting (1)
 * `nwd_send_code` *(Write)* — Run a C# script on the Navisworks UI thread with `doc` as the active document. Returns the last expression as `result` and Console output as `stdout`; Navisworks waits while it runs.
@@ -152,7 +169,7 @@ After restarting Navisworks and reconnecting the MCP client, compare `initialize
 Strict read-only mode can be enforced via the `--read-only` flag or the `BIMWRIGHT_NWD_READ_ONLY=1` environment variable.
 - All write-capable toolsets are omitted from registration.
 - Mixed tools (e.g. `nwd_execute_search_set`) are modified to force read-only parameter bounds (`select=false`) and output a `read_only_enforced` response marker.
-- The total read-only tool surface is exactly **22 tools**. `nwd_list_recent_files` stays; `nwd_open_file` and `nwd_import_model` do not.
+- The total read-only tool surface is exactly **38 tools**. `nwd_list_recent_files` stays; `nwd_open_file` and `nwd_import_model` do not.
 
 ### Tool-call record
 **Record** is **off by default**. The ribbon toggle, the Status checkbox, `recordCalls` in `nwdmcp.config.json`, and `BIMWRIGHT_NWD_RECORD_CALLS` share one switch for every tool. While it is on, each call is appended to `mcp-calls.jsonl` next to that config file. The `send_code` script is not written; the line stores `code_length` and `code_sha256`.
@@ -189,7 +206,23 @@ Claude Code's auto mode checks each MCP call with a classifier. To skip that che
       "mcp__nwd-mcp__nwd_list_baked_tools",
       "mcp__nwd-mcp__nwd_list_bake_suggestions",
       "mcp__nwd-mcp__nwd_create_bake_issue_draft",
-      "mcp__nwd-mcp__nwd_resolve_ids"
+      "mcp__nwd-mcp__nwd_resolve_ids",
+      "mcp__nwd-mcp__nwd_list_models",
+      "mcp__nwd-mcp__nwd_get_document_metadata",
+      "mcp__nwd-mcp__nwd_peek_file_info",
+      "mcp__nwd-mcp__nwd_get_scene_bounds",
+      "mcp__nwd-mcp__nwd_get_item_hierarchy",
+      "mcp__nwd-mcp__nwd_get_items_geometry",
+      "mcp__nwd-mcp__nwd_get_visibility_state",
+      "mcp__nwd-mcp__nwd_describe_properties",
+      "mcp__nwd-mcp__nwd_property_value_histogram",
+      "mcp__nwd-mcp__nwd_export_properties_table",
+      "mcp__nwd-mcp__nwd_get_hyperlinks",
+      "mcp__nwd-mcp__nwd_get_grids",
+      "mcp__nwd-mcp__nwd_locate_items_on_grid",
+      "mcp__nwd-mcp__nwd_get_comments",
+      "mcp__nwd-mcp__nwd_list_sheets",
+      "mcp__nwd-mcp__nwd_list_alignments"
     ]
   }
 }

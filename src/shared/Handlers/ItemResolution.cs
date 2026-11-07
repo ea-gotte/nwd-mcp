@@ -180,7 +180,8 @@ public sealed class ItemIdEmitter
 
 /// <summary>
 /// The common "which items" argument: exactly one of item_ids (any id form), set_id (selection/search set name,
-/// id: or path:), or selection="current".
+/// id: or path:), selection="current", or all=true (every item in every model; add geometry_only=true to keep
+/// only items with geometry).
 /// </summary>
 public static class ItemScope
 {
@@ -190,8 +191,29 @@ public static class ItemScope
         var ids = p["item_ids"] as JArray;
         var setId = (string?)p["set_id"];
         var selection = (string?)p["selection"];
-        int given = (ids != null ? 1 : 0) + (!string.IsNullOrEmpty(setId) ? 1 : 0) + (!string.IsNullOrEmpty(selection) ? 1 : 0);
-        if (given != 1) { error = "give exactly one of item_ids, set_id or selection=\"current\""; return false; }
+        bool all = p["all"]?.Type == JTokenType.Boolean && (bool)p["all"]!;
+        int given = (ids != null ? 1 : 0) + (!string.IsNullOrEmpty(setId) ? 1 : 0) + (!string.IsNullOrEmpty(selection) ? 1 : 0) + (all ? 1 : 0);
+        if (given != 1) { error = "give exactly one of item_ids, set_id, selection=\"current\" or all=true"; return false; }
+
+        bool geometryOnly = p["geometry_only"]?.Type == JTokenType.Boolean && (bool)p["geometry_only"]!;
+        if (all)
+        {
+            items = NwJson.AllItems(doc).Where(i => !geometryOnly || i.HasGeometry).ToList();
+            return true;
+        }
+        if (geometryOnly)
+        {
+            var ok = TryResolveExplicit(p, doc, ids, setId, selection, out items, out unresolved, out error);
+            items = items.Where(i => i.HasGeometry).ToList();
+            return ok;
+        }
+        return TryResolveExplicit(p, doc, ids, setId, selection, out items, out unresolved, out error);
+    }
+
+    private static bool TryResolveExplicit(JObject p, NW.Document doc, JArray? ids, string? setId, string? selection,
+        out List<NW.ModelItem> items, out JArray unresolved, out string error)
+    {
+        items = new List<NW.ModelItem>(); unresolved = new JArray(); error = "";
 
         if (ids != null)
         {

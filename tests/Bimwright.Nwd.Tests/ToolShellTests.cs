@@ -58,6 +58,22 @@ public sealed class ToolShellTests
         new("nwd_unhide_all", "unhide_all", p => new VisibilityWriteTools(p.Client).UnhideAll(Ct), "{}"),
         // model
         new("nwd_resolve_ids", "resolve_ids", p => new ModelTools(p.Client).ResolveIds(new[] { "0:0:6", "pid:0:abc" }, null, null, 50, 10, null, Ct), """{"item_ids":["0:0:6","pid:0:abc"],"limit":50,"offset":10}"""),
+        new("nwd_list_models", "list_models", p => new ModelTools(p.Client).ListModels(Ct), "{}"),
+        new("nwd_get_document_metadata", "get_document_metadata", p => new ModelTools(p.Client).GetDocumentMetadata(Ct), "{}"),
+        new("nwd_peek_file_info", "peek_file_info", p => new ModelTools(p.Client).PeekFileInfo(Nwc, Ct), """{"path":"C:\\models\\site.nwc"}"""),
+        new("nwd_get_scene_bounds", "get_scene_bounds", p => new ModelTools(p.Client).GetSceneBounds(false, Ct), """{"ignore_hidden":false}"""),
+        new("nwd_get_item_hierarchy", "get_item_hierarchy", p => new ModelTools(p.Client).GetItemHierarchy("guid:6f1c2c1e-1d5b-4a3a-9c1e-0a1b2c3d4e5f", "pid", 20, null, null, Ct), """{"item_id":"guid:6f1c2c1e-1d5b-4a3a-9c1e-0a1b2c3d4e5f","id_mode":"pid","limit":20}"""),
+        new("nwd_get_items_geometry", "get_items_geometry", p => new ModelTools(p.Client).GetItemsGeometry(null, "Clash/Pipes", null, false, true, true, "guid", null, null, "bzoxMA==", Ct), """{"set_id":"Clash/Pipes","geometry_only":true,"ignore_hidden":true,"id_mode":"guid","cursor":"bzoxMA=="}"""),
+        new("nwd_get_visibility_state", "get_visibility_state", p => new ModelTools(p.Client).GetVisibilityState(null, 25, Ct), """{"limit":25}"""),
+        new("nwd_describe_properties", "describe_properties", p => new ModelTools(p.Client).DescribeProperties(null, null, "current", false, false, 100, Ct), """{"selection":"current","max_scan":100}"""),
+        new("nwd_property_value_histogram", "property_value_histogram", p => new ModelTools(p.Client).PropertyValueHistogram("Element/B_02_Cod-Tarea-4D", null, null, null, true, true, 10, null, Ct), """{"all":true,"geometry_only":true,"property":"Element/B_02_Cod-Tarea-4D","top":10}"""),
+        new("nwd_export_properties_table", "export_properties_table", p => new ModelTools(p.Client).ExportPropertiesTable(new[] { "Item/Name", "Element/C_05_Disciplina" }, null, null, null, true, true, false, "ecoplanta", 1000, "pid", Ct), """{"all":true,"geometry_only":true,"properties":["Item/Name","Element/C_05_Disciplina"],"include_name":false,"file_name":"ecoplanta","max_rows":1000,"id_mode":"pid"}"""),
+        new("nwd_get_hyperlinks", "get_hyperlinks", p => new ModelTools(p.Client).GetHyperlinks(new[] { "0:1" }, null, null, false, null, 5, null, null, Ct), """{"item_ids":["0:1"],"limit":5}"""),
+        new("nwd_get_grids", "get_grids", p => new ModelTools(p.Client).GetGrids(Ct), "{}"),
+        new("nwd_locate_items_on_grid", "locate_items_on_grid", p => new ModelTools(p.Client).LocateItemsOnGrid(null, null, "current", "Structural", null, null, null, null, Ct), """{"selection":"current","grid_system":"Structural"}"""),
+        new("nwd_get_comments", "get_comments", p => new ModelTools(p.Client).GetComments("viewpoints", 10, 20, null, Ct), """{"source":"viewpoints","limit":10,"offset":20}"""),
+        new("nwd_list_sheets", "list_sheets", p => new ModelTools(p.Client).ListSheets(Ct), "{}"),
+        new("nwd_list_alignments", "list_alignments", p => new ModelTools(p.Client).ListAlignments(Ct), "{}"),
         // code
         new("nwd_send_code", "send_code", p => new CodeTools(p.Client).SendCode("Console.WriteLine(1);", Ct), """{"code":"Console.WriteLine(1);"}"""),
     };
