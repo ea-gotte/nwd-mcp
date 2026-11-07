@@ -62,8 +62,9 @@ public sealed class ItemRefResolver
         {
             case ItemRefKind.Path:
             {
-                var item = _doc.Models.ResolveIndexPath(new[] { r.ModelIndex }.Concat(r.ChildPath).ToList())
-                           ?? ModelItemHelper.ResolveModelItemId(r.Raw, _doc);
+                // DocumentModels.ResolveIndexPath does not treat the first index as the model (live-tested: it
+                // resolved one level too deep), so use the walker that defines the path form.
+                var item = ModelItemHelper.ResolveModelItemId(ItemRef.FormatPath(r.ModelIndex, r.ChildPath), _doc);
                 return item == null ? none : new List<NW.ModelItem> { item };
             }
             case ItemRefKind.PathId:

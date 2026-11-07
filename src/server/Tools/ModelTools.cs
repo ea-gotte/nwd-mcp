@@ -126,11 +126,11 @@ public sealed class ModelTools
     public Task<string> GetGrids(CancellationToken ct = default) => Call("get_grids", new JObject(), ct);
 
     [McpServerTool(Name = "nwd_locate_items_on_grid", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false),
-     Description("For each item, the grid intersection (line names) and level nearest its bounding-box centre, with offset and distance. gridSystem is a name or index (default the active one). " + ScopeHelp + " " + IdModeHelp + " " + PageHelp)]
-    public Task<string> LocateItemsOnGrid(string[]? itemIds = null, string? setId = null, string? selection = null, string? gridSystem = null,
-        string? idMode = null, int? limit = null, int? offset = null, string? cursor = null, CancellationToken ct = default)
+     Description("For each item, the grid intersection (line names) and level nearest its bounding-box centre, with offset and distance. gridSystem is a name or index (default the active one). " + ScopeHelp + " " + AllHelp + " " + IdModeHelp + " " + PageHelp)]
+    public Task<string> LocateItemsOnGrid(string[]? itemIds = null, string? setId = null, string? selection = null, bool all = false, bool geometryOnly = false,
+        string? gridSystem = null, string? idMode = null, int? limit = null, int? offset = null, string? cursor = null, CancellationToken ct = default)
     {
-        var p = ScopeArgs(itemIds, setId, selection, limit, offset, cursor);
+        var p = WithAll(ScopeArgs(itemIds, setId, selection, limit, offset, cursor), all, geometryOnly);
         if (!string.IsNullOrEmpty(gridSystem)) p["grid_system"] = gridSystem;
         return Call("locate_items_on_grid", WithIdMode(p, idMode), ct);
     }

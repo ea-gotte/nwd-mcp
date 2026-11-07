@@ -29,10 +29,11 @@ public sealed class ReviewWriteTools
     }
 
     [McpServerTool(Name = "nwd_isolate_items", ReadOnly = false, Destructive = true, Idempotent = true, OpenWorld = false),
-     Description("Hide everything except the scope (its ancestors stay visible). By default unhides everything first. Undo with nwd_reset_visibility which=hidden. " + ModelTools.ScopeHelp)]
-    public Task<string> IsolateItems(string[]? itemIds = null, string? setId = null, string? selection = null, bool resetHiddenFirst = true, CancellationToken ct = default)
+     Description("Hide everything except the scope (its ancestors stay visible). By default unhides everything first. Undo with nwd_reset_visibility which=hidden. " + ModelTools.ScopeHelp + " " + ModelTools.AllHelp)]
+    public Task<string> IsolateItems(string[]? itemIds = null, string? setId = null, string? selection = null, bool resetHiddenFirst = true,
+        bool all = false, bool geometryOnly = false, CancellationToken ct = default)
     {
-        var p = Scope(itemIds, setId, selection);
+        var p = Scope(itemIds, setId, selection, all, geometryOnly);
         p["reset_hidden_first"] = resetHiddenFirst;
         return Call("isolate_items", p, ct);
     }
@@ -89,10 +90,11 @@ public sealed class ReviewWriteTools
     }
 
     [McpServerTool(Name = "nwd_zoom_to_items", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false),
-     Description("Frame the camera on the bounding box of a scope; select=true also selects it. Returns the new camera. " + ModelTools.ScopeHelp)]
-    public Task<string> ZoomToItems(string[]? itemIds = null, string? setId = null, string? selection = null, bool select = false, CancellationToken ct = default)
+     Description("Frame the camera on the bounding box of a scope; select=true also selects it. Returns the new camera. Use all=true, geometryOnly=true to frame the whole model (e.g. after a saved viewpoint that looks elsewhere). " + ModelTools.ScopeHelp)]
+    public Task<string> ZoomToItems(string[]? itemIds = null, string? setId = null, string? selection = null, bool all = false, bool geometryOnly = false,
+        bool select = false, CancellationToken ct = default)
     {
-        var p = Scope(itemIds, setId, selection);
+        var p = Scope(itemIds, setId, selection, all, geometryOnly);
         p["select"] = select;
         return Call("zoom_to_items", p, ct);
     }
@@ -115,10 +117,10 @@ public sealed class ReviewWriteTools
 
     [McpServerTool(Name = "nwd_set_section", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false),
      Description("Sectioning. mode = box: section box around a scope plus padding (document units) and zoom to it (Navisworks 2026+); mode = off: disable sectioning (2026+); mode = json: apply clippingPlanesJson from nwd_get_section (all years). " + ModelTools.ScopeHelp)]
-    public Task<string> SetSection(string mode, string[]? itemIds = null, string? setId = null, string? selection = null, double padding = 0, bool zoom = true,
-        string? clippingPlanesJson = null, CancellationToken ct = default)
+    public Task<string> SetSection(string mode, string[]? itemIds = null, string? setId = null, string? selection = null, bool all = false, bool geometryOnly = false,
+        double padding = 0, bool zoom = true, string? clippingPlanesJson = null, CancellationToken ct = default)
     {
-        var p = mode == "box" ? Scope(itemIds, setId, selection) : new JObject();
+        var p = mode == "box" ? Scope(itemIds, setId, selection, all, geometryOnly) : new JObject();
         p["mode"] = mode;
         if (mode == "box") { p["padding"] = padding; p["zoom"] = zoom; }
         if (!string.IsNullOrEmpty(clippingPlanesJson)) p["clipping_planes_json"] = clippingPlanesJson;

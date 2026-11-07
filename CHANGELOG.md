@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Live verification (Navisworks Manage 2026)
+- All 35 new Phase 1–2 tools were exercised against a running Navisworks Manage 2026 on an avatar NWD and on a Revit-exported NWC with grids, levels and saved viewpoints. Captures were checked visually (colour by property, isolate, section box).
+- Fixed: path ids (`0:6:3`) resolved one level too deep through `DocumentModels.ResolveIndexPath`. They now use the original walker, and `"0:"` is the model root again.
+- Fixed: `nwd_locate_items_on_grid`, `nwd_zoom_to_items`, `nwd_isolate_items` and `nwd_set_section` (box) now accept `all` / `geometryOnly`.
+
 ### Visual review (Phase 2)
 - `review` toolset (read-only): `nwd_capture_image`, `nwd_get_section`, `nwd_get_redlines`.
 - `review_write` toolset: `nwd_select_items`, `nwd_isolate_items`, `nwd_set_item_flags`, `nwd_reset_visibility`, `nwd_override_appearance`, `nwd_color_by_property`, `nwd_reset_appearance`, `nwd_zoom_to_items`, `nwd_set_camera`, `nwd_set_section`, `nwd_set_background`, `nwd_set_redlines`, `nwd_manage_saved_viewpoint`, `nwd_add_comment`, `nwd_save_viewpoint_with_overrides`, `nwd_batch_viewpoint_images`.
