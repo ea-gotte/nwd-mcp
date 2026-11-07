@@ -3,7 +3,8 @@
 Usage (from the repo root):
     python -I scripts/register-tools.py tools.json
 
-tools.json is a list of {"command": "list_models", "handler": "ListModelsHandler", "read_only": true}.
+tools.json is a list of {"command": "list_models", "handler": "ListModelsHandler", "read_only": true}
+(add "destructive": true when the wrapper declares Destructive = true).
 The MCP tool name is "nwd_" + command. Step 1 (handler), 5 (server wrapper), 6 (Program.cs for a new class)
 and the ToolShellTests case stay manual. Re-running with an already registered command is a no-op for it.
 """
@@ -61,6 +62,16 @@ def main(spec_path):
             text = text.replace('foreach (var w in new[] { "open_file",', 'foreach (var w in new[] { ' + writes + '"open_file",', 1)
         return text
     edit("tests/Bimwright.Nwd.Tests/NwdCommandCatalogTests.cs", catalog_tests)
+
+    # ToolAnnotationTests keeps an explicit list of destructive tools ("destructive": true in the spec).
+    destructive = [f'"nwd_{s["command"]}"' for s in specs if s.get("destructive")]
+    if destructive:
+        def destructive_list(text):
+            anchor = '"nwd_dismiss_bake_suggestion"'
+            start = text.index(anchor)
+            end = text.index("\n    };", start)
+            return text[:end] + ",\n        " + ", ".join(destructive) + text[end:]
+        edit("tests/Bimwright.Nwd.Tests/ToolAnnotationTests.cs", destructive_list)
 
     # Golden tool lists.
     counts = {}

@@ -18,7 +18,8 @@ public sealed class ToolAnnotationTests
 
     private static readonly string[] Destructive =
     {
-        "nwd_open_file", "nwd_hide_items", "nwd_unhide_all", "nwd_run_baked_tool", "nwd_dismiss_bake_suggestion"
+        "nwd_open_file", "nwd_hide_items", "nwd_unhide_all", "nwd_run_baked_tool", "nwd_dismiss_bake_suggestion",
+        "nwd_isolate_items", "nwd_reset_visibility", "nwd_set_redlines", "nwd_manage_saved_viewpoint"
     };
 
     internal static IReadOnlyList<Tool> ToolsFor(NwdMcpConfig config)

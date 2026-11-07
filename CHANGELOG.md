@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Visual review (Phase 2)
+- `review` toolset (read-only): `nwd_capture_image`, `nwd_get_section`, `nwd_get_redlines`.
+- `review_write` toolset: `nwd_select_items`, `nwd_isolate_items`, `nwd_set_item_flags`, `nwd_reset_visibility`, `nwd_override_appearance`, `nwd_color_by_property`, `nwd_reset_appearance`, `nwd_zoom_to_items`, `nwd_set_camera`, `nwd_set_section`, `nwd_set_background`, `nwd_set_redlines`, `nwd_manage_saved_viewpoint`, `nwd_add_comment`, `nwd_save_viewpoint_with_overrides`, `nwd_batch_viewpoint_images`.
+- Colours accept `#RRGGBB`, `r,g,b` or basic names. `nwd_color_by_property` assigns deterministic distinct colours and returns the legend.
+- The section box and `set_section` box/off modes are compiled only for Navisworks 2026+ (`ClipPlaneSet` is not in the 2024 API). Older years use the clip-planes JSON.
+- `scripts/register-tools.py` also updates the destructive-tool list for specs with `"destructive": true`.
+
 ### Model reading (Phase 1)
 - 16 read-only tools in the `model` toolset: `nwd_list_models`, `nwd_get_document_metadata`, `nwd_peek_file_info`, `nwd_get_scene_bounds`, `nwd_get_item_hierarchy`, `nwd_get_items_geometry`, `nwd_get_visibility_state`, `nwd_describe_properties`, `nwd_property_value_histogram`, `nwd_export_properties_table`, `nwd_get_hyperlinks`, `nwd_get_grids`, `nwd_locate_items_on_grid`, `nwd_get_comments`, `nwd_list_sheets`, `nwd_list_alignments`.
 - Item scope accepts `all=true` and `geometry_only=true`.

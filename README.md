@@ -10,7 +10,7 @@
   <a href="https://github.com/bimwright/nwd-mcp/actions/workflows/build.yml"><img src="https://github.com/bimwright/nwd-mcp/actions/workflows/build.yml/badge.svg" alt="build" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="license" /></a>
   <a href="#capabilities--architecture"><img src="https://img.shields.io/badge/Navisworks-2022--2027-2D9B9B" alt="Navisworks 2022-2027" /></a>
-  <a href="#tool-surface"><img src="https://img.shields.io/badge/MCP-50%20tools-6C47FF" alt="MCP tools" /></a>
+  <a href="#tool-surface"><img src="https://img.shields.io/badge/MCP-69%20tools-6C47FF" alt="MCP tools" /></a>
 </p>
 
 <p align="center">
@@ -76,7 +76,7 @@ Useful flags after wiring: `--read-only` / `BIMWRIGHT_NWD_READ_ONLY=1`, and `--t
 
 ## Tool Surface
 
-A default launch registers every toolset: **50 tools**. `--read-only` leaves **38**. Every tool uses the `nwd_*` prefix.
+A default launch registers every toolset: **69 tools**. `--read-only` leaves **41**. Every tool uses the `nwd_*` prefix.
 
 ### 1. Target/Meta Tools (3)
 * `nwd_list_available_targets` — List all active discovered Navisworks sessions.
@@ -137,10 +137,21 @@ Item arguments take ids in any form (`0:6:3`, `pid:<model>:<pathId>`, `nid:<mode
 * `nwd_get_comments` — Comments on saved viewpoints and sets.
 * `nwd_list_sheets` / `nwd_list_alignments` — Sheets and civil alignments.
 
-### 9. Escape Hatch Scripting (1)
+### 9. Visual Review Tools (3 read + 16 write)
+Read (`review`): `nwd_capture_image` (PNG of the active view into `%LOCALAPPDATA%\Bimwright\nwd-mcp\captures`), `nwd_get_section`, `nwd_get_redlines`.
+
+Write (`review_write`):
+* Selection and visibility: `nwd_select_items` (set/add/remove/all/clear), `nwd_isolate_items`, `nwd_set_item_flags` (hidden/required/frozen), `nwd_reset_visibility`.
+* Appearance: `nwd_override_appearance`, `nwd_color_by_property` (returns the legend), `nwd_reset_appearance`.
+* Camera and view: `nwd_zoom_to_items`, `nwd_set_camera`, `nwd_set_section` (box around items, off, or clip-planes JSON), `nwd_set_background`, `nwd_set_redlines`.
+* Saved viewpoints: `nwd_manage_saved_viewpoint` (rename/delete/move/create folder/update from current), `nwd_add_comment`, `nwd_save_viewpoint_with_overrides`, `nwd_batch_viewpoint_images`.
+
+`nwd_set_section` box/off and the section box in `nwd_get_section` need Navisworks 2026+. Older years use clip-planes JSON.
+
+### 10. Escape Hatch Scripting (1)
 * `nwd_send_code` *(Write)* — Run a C# script on the Navisworks UI thread with `doc` as the active document. Returns the last expression as `result` and Console output as `stdout`; Navisworks waits while it runs.
 
-### 10. ToolBaker Governed Tools (6)
+### 11. ToolBaker Governed Tools (6)
 * `nwd_list_baked_tools` — List all verified compiled reusable tools.
 * `nwd_run_baked_tool` *(Write)* — Run an accepted baked tool by name with parameters.
 * `nwd_list_bake_suggestions` — List adaptive workflow suggestions.
@@ -168,7 +179,7 @@ After restarting Navisworks and reconnecting the MCP client, compare `initialize
 Strict read-only mode can be enforced via the `--read-only` flag or the `BIMWRIGHT_NWD_READ_ONLY=1` environment variable.
 - All write-capable toolsets are omitted from registration.
 - Mixed tools (e.g. `nwd_execute_search_set`) are modified to force read-only parameter bounds (`select=false`) and output a `read_only_enforced` response marker.
-- The total read-only tool surface is exactly **38 tools**. `nwd_list_recent_files` stays; `nwd_open_file` and `nwd_import_model` do not.
+- The total read-only tool surface is exactly **41 tools**. `nwd_list_recent_files` stays; `nwd_open_file` and `nwd_import_model` do not.
 
 ### Tool-call record
 **Record** is **off by default**. The ribbon toggle, the Status checkbox, `recordCalls` in `nwdmcp.config.json`, and `BIMWRIGHT_NWD_RECORD_CALLS` share one switch for every tool. While it is on, each call is appended to `mcp-calls.jsonl` next to that config file. The `send_code` script is not written; the line stores `code_length` and `code_sha256`.
@@ -221,7 +232,10 @@ Claude Code's auto mode checks each MCP call with a classifier. To skip that che
       "mcp__nwd-mcp__nwd_locate_items_on_grid",
       "mcp__nwd-mcp__nwd_get_comments",
       "mcp__nwd-mcp__nwd_list_sheets",
-      "mcp__nwd-mcp__nwd_list_alignments"
+      "mcp__nwd-mcp__nwd_list_alignments",
+      "mcp__nwd-mcp__nwd_capture_image",
+      "mcp__nwd-mcp__nwd_get_section",
+      "mcp__nwd-mcp__nwd_get_redlines"
     ]
   }
 }

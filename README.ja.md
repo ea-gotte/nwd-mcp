@@ -183,7 +183,10 @@ Claude Code の auto mode は MCP 呼び出しごとに分類器でチェック�
       "mcp__nwd-mcp__nwd_locate_items_on_grid",
       "mcp__nwd-mcp__nwd_get_comments",
       "mcp__nwd-mcp__nwd_list_sheets",
-      "mcp__nwd-mcp__nwd_list_alignments"
+      "mcp__nwd-mcp__nwd_list_alignments",
+      "mcp__nwd-mcp__nwd_capture_image",
+      "mcp__nwd-mcp__nwd_get_section",
+      "mcp__nwd-mcp__nwd_get_redlines"
     ]
   }
 }

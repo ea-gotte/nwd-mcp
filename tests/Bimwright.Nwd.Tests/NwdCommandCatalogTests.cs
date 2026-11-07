@@ -12,7 +12,7 @@ public sealed class NwdCommandCatalogTests
         "get_current_selection","clear_selection","select_items_by_search",
         "list_sets","get_selection_set_items","execute_search_set",
         "list_viewpoints","get_current_viewpoint","goto_viewpoint","save_viewpoint",
-        "hide_items","unhide_all","resolve_ids","list_models","get_document_metadata","peek_file_info","get_scene_bounds","get_item_hierarchy","get_items_geometry","get_visibility_state","describe_properties","property_value_histogram","export_properties_table","get_hyperlinks","get_grids","locate_items_on_grid","get_comments","list_sheets","list_alignments","send_code","run_baked_tool","apply_bake"
+        "hide_items","unhide_all","resolve_ids","list_models","get_document_metadata","peek_file_info","get_scene_bounds","get_item_hierarchy","get_items_geometry","get_visibility_state","describe_properties","property_value_histogram","export_properties_table","get_hyperlinks","get_grids","locate_items_on_grid","get_comments","list_sheets","list_alignments","capture_image","get_section","get_redlines","select_items","isolate_items","set_item_flags","reset_visibility","override_appearance","color_by_property","reset_appearance","zoom_to_items","set_camera","set_section","set_background","set_redlines","manage_saved_viewpoint","add_comment","save_viewpoint_with_overrides","batch_viewpoint_images","send_code","run_baked_tool","apply_bake"
     };
 
     [Fact]
@@ -25,7 +25,7 @@ public sealed class NwdCommandCatalogTests
     [Fact]
     public void WriteCommandsAreFlaggedNotReadOnly()
     {
-        foreach (var w in new[] { "open_file","import_model","clear_selection","select_items_by_search","goto_viewpoint","save_viewpoint","hide_items","unhide_all","send_code","run_baked_tool","apply_bake" })
+        foreach (var w in new[] { "select_items","isolate_items","set_item_flags","reset_visibility","override_appearance","color_by_property","reset_appearance","zoom_to_items","set_camera","set_section","set_background","set_redlines","manage_saved_viewpoint","add_comment","save_viewpoint_with_overrides","batch_viewpoint_images","open_file","import_model","clear_selection","select_items_by_search","goto_viewpoint","save_viewpoint","hide_items","unhide_all","send_code","run_baked_tool","apply_bake" })
             Assert.False(NwdCommandCatalog.All.Single(c => c.Name == w).IsReadOnly, $"{w} should be write");
     }
 }
