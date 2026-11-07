@@ -29,6 +29,26 @@
       <HintPath>$(NavisworksInstallDir)\Autodesk.Navisworks.Controls.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Autodesk.Navisworks.Clash">
+      <HintPath>$(NavisworksInstallDir)\Autodesk.Navisworks.Clash.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Autodesk.Navisworks.Timeliner">
+      <HintPath>$(NavisworksInstallDir)\Autodesk.Navisworks.Timeliner.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Autodesk.Navisworks.Takeoff">
+      <HintPath>$(NavisworksInstallDir)\Autodesk.Navisworks.Takeoff.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Autodesk.Navisworks.ComApi">
+      <HintPath>$(NavisworksInstallDir)\Autodesk.Navisworks.ComApi.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Autodesk.Navisworks.Interop.ComApi">
+      <HintPath>$(NavisworksInstallDir)\Autodesk.Navisworks.Interop.ComApi.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="AdWindows">
       <HintPath>$(NavisworksInstallDir)\AdWindows.dll</HintPath>
       <Private>false</Private>

@@ -10,7 +10,7 @@
   <a href="https://github.com/bimwright/nwd-mcp/actions/workflows/build.yml"><img src="https://github.com/bimwright/nwd-mcp/actions/workflows/build.yml/badge.svg" alt="build" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="license" /></a>
   <a href="#capabilities--architecture"><img src="https://img.shields.io/badge/Navisworks-2022--2027-2D9B9B" alt="Navisworks 2022-2027" /></a>
-  <a href="#tool-surface"><img src="https://img.shields.io/badge/MCP-33%20tools-6C47FF" alt="MCP tools" /></a>
+  <a href="#tool-surface"><img src="https://img.shields.io/badge/MCP-34%20tools-6C47FF" alt="MCP tools" /></a>
 </p>
 
 <p align="center">
@@ -70,13 +70,13 @@ The NuGet package `Bimwright.Nwd.Server` is server-only: it has no Navisworks pl
 
 **Developer:** `dotnet build` a `plugin-navisNN` project, then `pwsh scripts\install-bundle.ps1 -Year 2025 -Configuration Release`.
 
-Useful flags after wiring: `--read-only` / `BIMWRIGHT_NWD_READ_ONLY=1`.
+Useful flags after wiring: `--read-only` / `BIMWRIGHT_NWD_READ_ONLY=1`, and `--toolsets <list>` to load only some toolsets or workflow profiles (`core`, `visual`, `coordination`, `4d`, `qto`, `data`), e.g. `--toolsets 4d,code`.
 
 ---
 
 ## Tool Surface
 
-A default launch registers every toolset: **33 tools**. `--read-only` leaves **21**. Every tool uses the `nwd_*` prefix.
+A default launch registers every toolset: **34 tools**. `--read-only` leaves **22**. Every tool uses the `nwd_*` prefix.
 
 ### 1. Target/Meta Tools (3)
 * `nwd_list_available_targets` — List all active discovered Navisworks sessions.
@@ -118,10 +118,13 @@ A default launch registers every toolset: **33 tools**. `--read-only` leaves **2
 * `nwd_hide_items` *(Write)* — Hide/show specified elements.
 * `nwd_unhide_all` *(Write)* — Reset all hidden elements to visible.
 
-### 8. Escape Hatch Scripting (1)
+### 8. Model Tools (1)
+* `nwd_resolve_ids` — Convert items (ids in any form, a set, or the current selection) to every id form: `path` (stale after append/merge/refresh), `pid` (stable path id), `nid` (numeric id), `guid` (instance guid). Paged.
+
+### 9. Escape Hatch Scripting (1)
 * `nwd_send_code` *(Write)* — Run a C# script on the Navisworks UI thread with `doc` as the active document. Returns the last expression as `result` and Console output as `stdout`; Navisworks waits while it runs.
 
-### 9. ToolBaker Governed Tools (6)
+### 10. ToolBaker Governed Tools (6)
 * `nwd_list_baked_tools` — List all verified compiled reusable tools.
 * `nwd_run_baked_tool` *(Write)* — Run an accepted baked tool by name with parameters.
 * `nwd_list_bake_suggestions` — List adaptive workflow suggestions.
@@ -149,7 +152,7 @@ After restarting Navisworks and reconnecting the MCP client, compare `initialize
 Strict read-only mode can be enforced via the `--read-only` flag or the `BIMWRIGHT_NWD_READ_ONLY=1` environment variable.
 - All write-capable toolsets are omitted from registration.
 - Mixed tools (e.g. `nwd_execute_search_set`) are modified to force read-only parameter bounds (`select=false`) and output a `read_only_enforced` response marker.
-- The total read-only tool surface is exactly **21 tools**. `nwd_list_recent_files` stays; `nwd_open_file` and `nwd_import_model` do not.
+- The total read-only tool surface is exactly **22 tools**. `nwd_list_recent_files` stays; `nwd_open_file` and `nwd_import_model` do not.
 
 ### Tool-call record
 **Record** is **off by default**. The ribbon toggle, the Status checkbox, `recordCalls` in `nwdmcp.config.json`, and `BIMWRIGHT_NWD_RECORD_CALLS` share one switch for every tool. While it is on, each call is appended to `mcp-calls.jsonl` next to that config file. The `send_code` script is not written; the line stores `code_length` and `code_sha256`.
@@ -185,7 +188,8 @@ Claude Code's auto mode checks each MCP call with a classifier. To skip that che
       "mcp__nwd-mcp__nwd_goto_viewpoint",
       "mcp__nwd-mcp__nwd_list_baked_tools",
       "mcp__nwd-mcp__nwd_list_bake_suggestions",
-      "mcp__nwd-mcp__nwd_create_bake_issue_draft"
+      "mcp__nwd-mcp__nwd_create_bake_issue_draft",
+      "mcp__nwd-mcp__nwd_resolve_ids"
     ]
   }
 }

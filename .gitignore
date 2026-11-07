@@ -19,3 +19,6 @@ local.settings.json
 *.nwd
 *.nwf
 *.nwc
+
+# oh-my-claudecode local state
+.omc/

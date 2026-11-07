@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Full-API foundations (Phase 0)
+- Plug-in projects for every year reference `Autodesk.Navisworks.Clash`, `Timeliner`, `Takeoff`, `ComApi` and `Interop.ComApi`, ready for the clash, 4D, quantification and user-property tools.
+- Fixed: 2022–2024, 2026 and 2027 plug-ins did not compile. They lacked the `IsExternalInit` polyfill and referenced `Autodesk.Navisworks.Api.Controls.dll`, which does not exist; the installed DLL is `Autodesk.Navisworks.Controls.dll`.
+- New toolsets `model`, `review`, `review_write`, `sets_write`, `clash`, `clash_write`, `timeliner`, `timeliner_write`, `takeoff`, `takeoff_write`, `data_write`, `export`. All are on by default, and `--read-only` strips the write halves.
+- Workflow profiles for `--toolsets`: `core`, `visual`, `coordination`, `4d`, `qto`, `data`. They combine with toolset names.
+- Stable item ids: handlers accept `pid:<model>:<pathId>`, `nid:<model>:<id>` and `guid:<guid>` alongside the path form. `id_mode` chooses the emitted form.
+- Shared item scope (`item_ids` | `set_id` | `selection="current"`) and offset/limit/cursor paging for list tools.
+- New tool `nwd_resolve_ids` (toolset `model`, read-only) converts items to every id form.
+- `docs/ADDING_TOOLS.md`: checklist and building blocks for new tools.
+
 ### Fixed
 - Empty-document camera reads guard `HasFocalDistance` and return `focal_distance: null` instead of throwing.
 - Saved viewpoint/set names containing literal `/` now round-trip. Lists retain `name` and add `id` and `path`; consumers accept these identifiers. Escaped paths start with `path:/`, encode `~` as `~0` and `/` within a segment as `~1`. GUID-less SDK items use the escaped path as their ID. Legacy unambiguous names/paths still work; ambiguous names fail rather than silently selecting the first match.

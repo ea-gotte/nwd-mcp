@@ -32,6 +32,7 @@ public static class NwdCommandCatalog
         new NwdCommandInfo("save_viewpoint", false),
         new NwdCommandInfo("hide_items", false),
         new NwdCommandInfo("unhide_all", false),
+        new NwdCommandInfo("resolve_ids", true),
         new NwdCommandInfo("send_code", false),
         new NwdCommandInfo("run_baked_tool", false),
         new NwdCommandInfo("apply_bake", false),

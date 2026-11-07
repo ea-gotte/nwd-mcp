@@ -56,6 +56,8 @@ public sealed class ToolShellTests
         // visibility
         new("nwd_hide_items", "hide_items", p => new VisibilityWriteTools(p.Client).HideItems(new[] { "0:0:6" }, false, Ct), """{"item_ids":["0:0:6"],"hide":false}"""),
         new("nwd_unhide_all", "unhide_all", p => new VisibilityWriteTools(p.Client).UnhideAll(Ct), "{}"),
+        // model
+        new("nwd_resolve_ids", "resolve_ids", p => new ModelTools(p.Client).ResolveIds(new[] { "0:0:6", "pid:0:abc" }, null, null, 50, 10, null, Ct), """{"item_ids":["0:0:6","pid:0:abc"],"limit":50,"offset":10}"""),
         // code
         new("nwd_send_code", "send_code", p => new CodeTools(p.Client).SendCode("Console.WriteLine(1);", Ct), """{"code":"Console.WriteLine(1);"}"""),
     };
