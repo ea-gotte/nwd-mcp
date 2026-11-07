@@ -24,6 +24,13 @@ updates the registry, names, catalog, catalog test, golden lists, tool counts an
 You still write the handler, the wrapper, the `Program.cs` lines for a new class and the `ToolShellTests` case.
 Derive new handlers from `DocumentCommand` (`NwJson.cs`): it resolves the document and maps `CommandFailure` to coded errors.
 
+## Navisworks object identity
+
+Managed wrappers (`TimelinerTask`, `GroupItem`, …) are new objects on every walk, so `ReferenceEquals`
+between two walks is always false. Identify saved items and tasks by index path, GUID or key fields instead.
+`ModelItem` equality does work across lookups. Navisworks also auto-adjusts some values, for example the other
+date of a task when a range would invert, so validate inputs before assigning them.
+
 ## Version differences
 
 The plug-in compiles once per year. When an API member is missing in older years (for example

@@ -93,6 +93,8 @@ internal static partial class Program
         if (toolType == typeof(ModelTools)) return mcp.WithTools<ModelTools>();
         if (toolType == typeof(ReviewTools)) return mcp.WithTools<ReviewTools>();
         if (toolType == typeof(ReviewWriteTools)) return mcp.WithTools<ReviewWriteTools>();
+        if (toolType == typeof(TimelinerTools)) return mcp.WithTools<TimelinerTools>();
+        if (toolType == typeof(TimelinerWriteTools)) return mcp.WithTools<TimelinerWriteTools>();
 
         throw new InvalidOperationException("Unsupported MCP tool type: " + toolType.FullName);
     }
@@ -119,6 +121,8 @@ internal static partial class Program
         Add("model",           typeof(ModelTools));
         Add("review",          typeof(ReviewTools));
         Add("review_write",    typeof(ReviewWriteTools));
+        Add("timeliner",       typeof(TimelinerTools));
+        Add("timeliner_write", typeof(TimelinerWriteTools));
         return types;
     }
 }

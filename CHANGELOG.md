@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### TimeLiner / 4D (Phase 5)
+- `timeliner` toolset (read-only): `nwd_list_timeliner_tasks`, `nwd_get_timeliner_task`, `nwd_get_timeliner_config`, `nwd_timeliner_coverage`, `nwd_find_tasks_for_items`, `nwd_export_timeliner_schedule`.
+- `timeliner_write` toolset: `nwd_create_timeliner_task`, `nwd_update_timeliner_task`, `nwd_delete_timeliner_task`, `nwd_move_timeliner_task`, `nwd_attach_items_to_task`, `nwd_auto_attach_tasks_by_property`, `nwd_sync_timeliner_data_source`, `nwd_recalculate_task_summaries`, `nwd_sort_timeliner_tasks`, `nwd_manage_simulation_appearance`.
+- Unit-tested logic: task references, dates and range checks, accent-insensitive name matching, and the code matcher (normalised, multi-code separator, duplicate keys, tasks without key).
+- Live-verified in Navisworks Manage 2026 on a Revit NWC. Auto-attach by level code linked 346/363 items to 5 tasks with 95.32% coverage, and summaries, sort, move, appearances and CSV export were exercised. Fixed during testing: localised task types, date ranges validated before Navisworks adjusts them, and moved/created tasks located by index path (Navisworks wrappers are not identity-stable across walks).
+- Not yet live-tested: `nwd_sync_timeliner_data_source` against a real P6/MS Project/CSV data source.
+
 ### Live verification (Navisworks Manage 2026)
 - All 35 new Phase 1–2 tools were exercised against a running Navisworks Manage 2026 on an avatar NWD and on a Revit-exported NWC with grids, levels and saved viewpoints. Captures were checked visually (colour by property, isolate, section box).
 - Fixed: path ids (`0:6:3`) resolved one level too deep through `DocumentModels.ResolveIndexPath`. They now use the original walker, and `"0:"` is the model root again.

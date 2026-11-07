@@ -19,7 +19,8 @@ public sealed class ToolAnnotationTests
     private static readonly string[] Destructive =
     {
         "nwd_open_file", "nwd_hide_items", "nwd_unhide_all", "nwd_run_baked_tool", "nwd_dismiss_bake_suggestion",
-        "nwd_isolate_items", "nwd_reset_visibility", "nwd_set_redlines", "nwd_manage_saved_viewpoint"
+        "nwd_isolate_items", "nwd_reset_visibility", "nwd_set_redlines", "nwd_manage_saved_viewpoint",
+        "nwd_delete_timeliner_task", "nwd_auto_attach_tasks_by_property", "nwd_sync_timeliner_data_source", "nwd_recalculate_task_summaries", "nwd_sort_timeliner_tasks", "nwd_manage_simulation_appearance"
     };
 
     internal static IReadOnlyList<Tool> ToolsFor(NwdMcpConfig config)

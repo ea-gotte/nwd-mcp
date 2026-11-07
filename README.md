@@ -10,7 +10,7 @@
   <a href="https://github.com/bimwright/nwd-mcp/actions/workflows/build.yml"><img src="https://github.com/bimwright/nwd-mcp/actions/workflows/build.yml/badge.svg" alt="build" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="license" /></a>
   <a href="#capabilities--architecture"><img src="https://img.shields.io/badge/Navisworks-2022--2027-2D9B9B" alt="Navisworks 2022-2027" /></a>
-  <a href="#tool-surface"><img src="https://img.shields.io/badge/MCP-69%20tools-6C47FF" alt="MCP tools" /></a>
+  <a href="#tool-surface"><img src="https://img.shields.io/badge/MCP-85%20tools-6C47FF" alt="MCP tools" /></a>
 </p>
 
 <p align="center">
@@ -76,7 +76,7 @@ Useful flags after wiring: `--read-only` / `BIMWRIGHT_NWD_READ_ONLY=1`, and `--t
 
 ## Tool Surface
 
-A default launch registers every toolset: **69 tools**. `--read-only` leaves **41**. Every tool uses the `nwd_*` prefix.
+A default launch registers every toolset: **85 tools**. `--read-only` leaves **47**. Every tool uses the `nwd_*` prefix.
 
 ### 1. Target/Meta Tools (3)
 * `nwd_list_available_targets` — List all active discovered Navisworks sessions.
@@ -148,10 +148,19 @@ Write (`review_write`):
 
 `nwd_set_section` box/off and the section box in `nwd_get_section` need Navisworks 2026+. Older years use clip-planes JSON.
 
-### 10. Escape Hatch Scripting (1)
+### 10. TimeLiner / 4D Tools (6 read + 10 write)
+Task ids: `task:2/0/5` (index path), `display:<DisplayId>`, `sync:<SynchronizationId>` or the task name.
+
+Read (`timeliner`): `nwd_list_timeliner_tasks`, `nwd_get_timeliner_task` (with attached items), `nwd_get_timeliner_config` (data sources, task types, appearances), `nwd_timeliner_coverage` (% of geometry covered, uncovered items, items in several tasks, empty leaf tasks), `nwd_find_tasks_for_items`, `nwd_export_timeliner_schedule` (CSV).
+
+Write (`timeliner_write`): `nwd_create_timeliner_task`, `nwd_update_timeliner_task`, `nwd_delete_timeliner_task`, `nwd_move_timeliner_task`, `nwd_attach_items_to_task` (replace/add/clear; a set is linked live), `nwd_auto_attach_tasks_by_property` (match an item property such as a 4D task code to the task's display id, sync id, name or user field; dry run by default, applied as one Undo step), `nwd_sync_timeliner_data_source` (P6 / MS Project / CSV re-import, synchronize or rebuild), `nwd_recalculate_task_summaries`, `nwd_sort_timeliner_tasks`, `nwd_manage_simulation_appearance`.
+
+Task types are localised (for example Construcción/Demoler/Temporal on a Spanish install). `type` is matched ignoring case and accents, and an unknown type lists the valid ones. Date ranges are checked before Navisworks sees them, because Navisworks would silently move the other date.
+
+### 11. Escape Hatch Scripting (1)
 * `nwd_send_code` *(Write)* — Run a C# script on the Navisworks UI thread with `doc` as the active document. Returns the last expression as `result` and Console output as `stdout`; Navisworks waits while it runs.
 
-### 11. ToolBaker Governed Tools (6)
+### 12. ToolBaker Governed Tools (6)
 * `nwd_list_baked_tools` — List all verified compiled reusable tools.
 * `nwd_run_baked_tool` *(Write)* — Run an accepted baked tool by name with parameters.
 * `nwd_list_bake_suggestions` — List adaptive workflow suggestions.
@@ -179,7 +188,7 @@ After restarting Navisworks and reconnecting the MCP client, compare `initialize
 Strict read-only mode can be enforced via the `--read-only` flag or the `BIMWRIGHT_NWD_READ_ONLY=1` environment variable.
 - All write-capable toolsets are omitted from registration.
 - Mixed tools (e.g. `nwd_execute_search_set`) are modified to force read-only parameter bounds (`select=false`) and output a `read_only_enforced` response marker.
-- The total read-only tool surface is exactly **41 tools**. `nwd_list_recent_files` stays; `nwd_open_file` and `nwd_import_model` do not.
+- The total read-only tool surface is exactly **47 tools**. `nwd_list_recent_files` stays; `nwd_open_file` and `nwd_import_model` do not.
 
 ### Tool-call record
 **Record** is **off by default**. The ribbon toggle, the Status checkbox, `recordCalls` in `nwdmcp.config.json`, and `BIMWRIGHT_NWD_RECORD_CALLS` share one switch for every tool. While it is on, each call is appended to `mcp-calls.jsonl` next to that config file. The `send_code` script is not written; the line stores `code_length` and `code_sha256`.
@@ -235,7 +244,13 @@ Claude Code's auto mode checks each MCP call with a classifier. To skip that che
       "mcp__nwd-mcp__nwd_list_alignments",
       "mcp__nwd-mcp__nwd_capture_image",
       "mcp__nwd-mcp__nwd_get_section",
-      "mcp__nwd-mcp__nwd_get_redlines"
+      "mcp__nwd-mcp__nwd_get_redlines",
+      "mcp__nwd-mcp__nwd_list_timeliner_tasks",
+      "mcp__nwd-mcp__nwd_get_timeliner_task",
+      "mcp__nwd-mcp__nwd_get_timeliner_config",
+      "mcp__nwd-mcp__nwd_timeliner_coverage",
+      "mcp__nwd-mcp__nwd_find_tasks_for_items",
+      "mcp__nwd-mcp__nwd_export_timeliner_schedule"
     ]
   }
 }

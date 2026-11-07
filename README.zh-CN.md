@@ -199,7 +199,13 @@ Claude Code 的 auto mode 会用分类器检查每次 MCP 调用。若要让只�
       "mcp__nwd-mcp__nwd_list_alignments",
       "mcp__nwd-mcp__nwd_capture_image",
       "mcp__nwd-mcp__nwd_get_section",
-      "mcp__nwd-mcp__nwd_get_redlines"
+      "mcp__nwd-mcp__nwd_get_redlines",
+      "mcp__nwd-mcp__nwd_list_timeliner_tasks",
+      "mcp__nwd-mcp__nwd_get_timeliner_task",
+      "mcp__nwd-mcp__nwd_get_timeliner_config",
+      "mcp__nwd-mcp__nwd_timeliner_coverage",
+      "mcp__nwd-mcp__nwd_find_tasks_for_items",
+      "mcp__nwd-mcp__nwd_export_timeliner_schedule"
     ]
   }
 }
