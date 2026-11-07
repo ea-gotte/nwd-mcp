@@ -6,8 +6,7 @@
 - 16 read-only tools in the `model` toolset: `nwd_list_models`, `nwd_get_document_metadata`, `nwd_peek_file_info`, `nwd_get_scene_bounds`, `nwd_get_item_hierarchy`, `nwd_get_items_geometry`, `nwd_get_visibility_state`, `nwd_describe_properties`, `nwd_property_value_histogram`, `nwd_export_properties_table`, `nwd_get_hyperlinks`, `nwd_get_grids`, `nwd_locate_items_on_grid`, `nwd_get_comments`, `nwd_list_sheets`, `nwd_list_alignments`.
 - Item scope accepts `all=true` and `geometry_only=true`.
 - Typed property values: numbers stay numbers and named constants show their display name.
-- CSV exports go to `%LOCALAPPDATA%\Bimwright
-wd-mcp\exports`. They are UTF-8 with BOM, neutralise formula injection and take sanitised file names only.
+- CSV exports go to `%LOCALAPPDATA%\Bimwright\nwd-mcp\exports`. They are UTF-8 with BOM, neutralise formula injection and take sanitised file names only.
 - `scripts/register-tools.py` registers new commands in every catalog, snapshot and README allow list.
 
 ### Full-API foundations (Phase 0)

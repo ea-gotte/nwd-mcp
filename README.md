@@ -130,8 +130,7 @@ Item arguments take ids in any form (`0:6:3`, `pid:<model>:<pathId>`, `nid:<mode
 * `nwd_get_visibility_state` — Top-most hidden/required/frozen items with counts.
 * `nwd_describe_properties` — Which categories/properties exist in a scope, with counts, types and samples.
 * `nwd_property_value_histogram` — Distinct values of a property with counts and missing items.
-* `nwd_export_properties_table` — CSV (Excel-ready, formula-safe) of items × properties in `%LOCALAPPDATA%\Bimwright
-wd-mcp\exports`.
+* `nwd_export_properties_table` — CSV (Excel-ready, formula-safe) of items × properties in `%LOCALAPPDATA%\Bimwright\nwd-mcp\exports`.
 * `nwd_get_hyperlinks` — Hyperlinks attached to items.
 * `nwd_get_grids` — Grid systems, levels and lines.
 * `nwd_locate_items_on_grid` — Nearest grid intersection and level for each item.
