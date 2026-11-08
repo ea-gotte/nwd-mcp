@@ -15,6 +15,7 @@
     <Compile Include="../../src/shared/Infrastructure/TableExport.cs" Link="TableExport.cs" />
     <Compile Include="../../src/shared/Infrastructure/ColorSpec.cs" Link="ColorSpec.cs" />
     <Compile Include="../../src/shared/Infrastructure/TimelinerLogic.cs" Link="TimelinerLogic.cs" />
+    <Compile Include="../../src/shared/Infrastructure/DataWriteLogic.cs" Link="DataWriteLogic.cs" />
     <Compile Include="../../src/shared/Views/Toast/ActivityAggregator.Nwd.cs" Link="ActivityAggregator.Nwd.cs" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />

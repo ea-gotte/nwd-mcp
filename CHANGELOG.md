@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Data writing (Phase 7)
+- Read (`model`): `nwd_get_user_properties`, `nwd_db_list_tables`, `nwd_db_query`.
+- Write (`data_write`): `nwd_set_user_properties`, `nwd_bulk_set_properties_from_table`, `nwd_remove_user_property_tab`, `nwd_set_hyperlinks`.
+- User-defined tabs are written through the COM API (`ComApiBridge`, `GetGUIPropertyNode`, `SetUserDefined` / `RemoveUserDefined`, verified by reflection on the 2026 interop assembly). Each batch is wrapped in `BeginEdit`/`EndEdit`, so it is one Undo step.
+- Unit-tested logic: CSV reader (comma/semicolon/tab detection, quotes, BOM), tab index and merge, internal names, and the read-only SQL guard.
+- Live-verified on Navisworks 2026: write, merge, null removal, replace, bulk CSV by id / property / name path, the .NET API reading back COM-written values, tab removal, hyperlinks and the SQL guard. Fixed while reviewing: `match=id` called a hidden `TryGetValue` and would never have matched.
+- Updating a tab now keeps its existing name instead of renaming it to the casing that was passed. This is built for 2024/2026 but not yet re-verified live.
+- Deliberately not included: SQL writes to the document database (the risk of corrupting Quantification data) and `SchemaBuilder`.
+
 ### TimeLiner / 4D (Phase 5)
 - `timeliner` toolset (read-only): `nwd_list_timeliner_tasks`, `nwd_get_timeliner_task`, `nwd_get_timeliner_config`, `nwd_timeliner_coverage`, `nwd_find_tasks_for_items`, `nwd_export_timeliner_schedule`.
 - `timeliner_write` toolset: `nwd_create_timeliner_task`, `nwd_update_timeliner_task`, `nwd_delete_timeliner_task`, `nwd_move_timeliner_task`, `nwd_attach_items_to_task`, `nwd_auto_attach_tasks_by_property`, `nwd_sync_timeliner_data_source`, `nwd_recalculate_task_summaries`, `nwd_sort_timeliner_tasks`, `nwd_manage_simulation_appearance`.

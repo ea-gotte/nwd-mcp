@@ -81,6 +81,13 @@ public static partial class NwdCommandRegistry
         "recalculate_task_summaries",
         "sort_timeliner_tasks",
         "manage_simulation_appearance",
+        "get_user_properties",
+        "db_list_tables",
+        "db_query",
+        "set_user_properties",
+        "bulk_set_properties_from_table",
+        "remove_user_property_tab",
+        "set_hyperlinks",
         "send_code",
         "run_baked_tool",
         "apply_bake"

@@ -87,6 +87,13 @@ public static partial class NwdCommandRegistry
         Add(new RecalculateTaskSummariesHandler());
         Add(new SortTimelinerTasksHandler());
         Add(new ManageSimulationAppearanceHandler());
+        Add(new GetUserPropertiesHandler());
+        Add(new DbListTablesHandler());
+        Add(new DbQueryHandler());
+        Add(new SetUserPropertiesHandler());
+        Add(new BulkSetPropertiesFromTableHandler());
+        Add(new RemoveUserPropertyTabHandler());
+        Add(new SetHyperlinksHandler());
         Add(new SendCodeHandler());
         Add(new RunBakedToolHandler());
         Add(new ApplyBakeHandler());

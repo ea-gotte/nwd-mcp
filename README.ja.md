@@ -192,7 +192,10 @@ Claude Code の auto mode は MCP 呼び出しごとに分類器でチェック�
       "mcp__nwd-mcp__nwd_get_timeliner_config",
       "mcp__nwd-mcp__nwd_timeliner_coverage",
       "mcp__nwd-mcp__nwd_find_tasks_for_items",
-      "mcp__nwd-mcp__nwd_export_timeliner_schedule"
+      "mcp__nwd-mcp__nwd_export_timeliner_schedule",
+      "mcp__nwd-mcp__nwd_get_user_properties",
+      "mcp__nwd-mcp__nwd_db_list_tables",
+      "mcp__nwd-mcp__nwd_db_query"
     ]
   }
 }

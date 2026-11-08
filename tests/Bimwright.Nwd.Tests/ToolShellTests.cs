@@ -111,6 +111,14 @@ public sealed class ToolShellTests
         new("nwd_recalculate_task_summaries", "recalculate_task_summaries", p => new TimelinerWriteTools(p.Client).RecalculateTaskSummaries(true, false, Ct), """{"dates":true,"costs":false}"""),
         new("nwd_sort_timeliner_tasks", "sort_timeliner_tasks", p => new TimelinerWriteTools(p.Client).SortTimelinerTasks("planned_end_date", false, Ct), """{"field":"planned_end_date","ascending":false}"""),
         new("nwd_manage_simulation_appearance", "manage_simulation_appearance", p => new TimelinerWriteTools(p.Client).ManageSimulationAppearance("add", "Montaje", "#00AAFF", 0.2, Ct), """{"action":"add","name":"Montaje","color":"#00AAFF","transparency":0.2}"""),
+        // data (model) / data_write
+        new("nwd_get_user_properties", "get_user_properties", p => new DataTools(p.Client).GetUserProperties(null, null, null, true, true, "Ecoplanta 4D", false, "pid", 10, null, null, Ct), """{"all":true,"geometry_only":true,"tab":"Ecoplanta 4D","id_mode":"pid","limit":10}"""),
+        new("nwd_db_list_tables", "db_list_tables", p => new DataTools(p.Client).DbListTables(Ct), "{}"),
+        new("nwd_db_query", "db_query", p => new DataTools(p.Client).DbQuery("SELECT 1", 10, Ct), """{"sql":"SELECT 1","max_rows":10}"""),
+        new("nwd_set_user_properties", "set_user_properties", p => new DataWriteTools(p.Client).SetUserProperties("Ecoplanta 4D", """{"C_05_Disciplina":"MEC","Orden":3,"Ok":true}""", "merge", null, "Bloque A", null, false, false, 100, Ct), """{"set_id":"Bloque A","tab":"Ecoplanta 4D","properties":{"C_05_Disciplina":"MEC","Orden":3,"Ok":true},"mode":"merge","max_items":100}"""),
+        new("nwd_bulk_set_properties_from_table", "bulk_set_properties_from_table", p => new DataWriteTools(p.Client).BulkSetPropertiesFromTable(@"C:\data\ecoplanta.csv", "A_01_Navis path", "Ecoplanta 4D", "name_path", new[] { "B_02_Cod-Tarea-4D" }, false, "merge", false, false, " > ", true, null, null, null, false, false, 5, Ct), """{"path":"C:\\data\\ecoplanta.csv","key_column":"A_01_Navis path","tab":"Ecoplanta 4D","match":"name_path","columns":["B_02_Cod-Tarea-4D"],"dry_run":false,"mode":"merge","path_separator":" > ","path_skip_root":true,"sample":5}"""),
+        new("nwd_remove_user_property_tab", "remove_user_property_tab", p => new DataWriteTools(p.Client).RemoveUserPropertyTab("QA", null, null, "current", false, false, null, Ct), """{"selection":"current","tab":"QA"}"""),
+        new("nwd_set_hyperlinks", "set_hyperlinks", p => new DataWriteTools(p.Client).SetHyperlinks("add", """[{"name":"Ficha","url":"https://example.com/f"}]""", new[] { "0:1" }, null, null, Ct), """{"item_ids":["0:1"],"mode":"add","links":[{"name":"Ficha","url":"https://example.com/f"}]}"""),
         // code
         new("nwd_send_code", "send_code", p => new CodeTools(p.Client).SendCode("Console.WriteLine(1);", Ct), """{"code":"Console.WriteLine(1);"}"""),
     };
