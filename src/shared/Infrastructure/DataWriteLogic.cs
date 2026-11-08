@@ -149,14 +149,69 @@ public static class SqlGuard
     public static bool IsReadOnly(string? sql, out string error)
     {
         error = "";
-        var s = (sql ?? "").Trim();
-        while (s.EndsWith(";")) s = s.Substring(0, s.Length - 1).TrimEnd();
-        if (s.Length == 0) { error = "sql is empty"; return false; }
-        var code = Regex.Replace(s, "'([^']|'')*'", "''"); // ignore string literals
+        if (!TryStripQuotedAndComments(sql ?? "", out var code, out error)) return false;
+        code = code.Trim();
+        while (code.EndsWith(";")) code = code.Substring(0, code.Length - 1).TrimEnd();
+        if (code.Length == 0) { error = "sql is empty"; return false; }
         if (code.Contains(";")) { error = "only one statement is allowed"; return false; }
         if (!Regex.IsMatch(code, @"^\s*(select|with)\b", RegexOptions.IgnoreCase)) { error = "only SELECT or WITH … SELECT queries are allowed"; return false; }
         var bad = Forbidden.Match(code);
         if (bad.Success) { error = $"'{bad.Value}' is not allowed: the database is read-only through this tool"; return false; }
+        return true;
+    }
+
+    /// <summary>
+    /// SQLite-style scan that blanks string literals ('…'), quoted identifiers ("…", […], `…`) and comments
+    /// (-- …, /* … */) so that keywords or ';' hidden inside them are neither missed nor falsely detected.
+    /// Unterminated quotes or comments are rejected.
+    /// </summary>
+    private static bool TryStripQuotedAndComments(string sql, out string code, out string error)
+    {
+        var sb = new StringBuilder(sql.Length);
+        error = "";
+        int i = 0;
+        while (i < sql.Length)
+        {
+            char c = sql[i];
+            char next = i + 1 < sql.Length ? sql[i + 1] : '\0';
+            if (c == '-' && next == '-')
+            {
+                int end = sql.IndexOf('\n', i);
+                i = end < 0 ? sql.Length : end + 1;
+                sb.Append(' ');
+                continue;
+            }
+            if (c == '/' && next == '*')
+            {
+                int end = sql.IndexOf("*/", i + 2, StringComparison.Ordinal);
+                if (end < 0) { code = ""; error = "unterminated /* comment"; return false; }
+                i = end + 2;
+                sb.Append(' ');
+                continue;
+            }
+            char close = c switch { '\'' => '\'', '"' => '"', '`' => '`', '[' => ']', _ => '\0' };
+            if (close != '\0')
+            {
+                int j = i + 1;
+                while (true)
+                {
+                    if (j >= sql.Length) { code = ""; error = $"unterminated {c} quote"; return false; }
+                    if (sql[j] == close)
+                    {
+                        // '' "" `` escape their own quote inside the token; ] does not.
+                        if (close != ']' && j + 1 < sql.Length && sql[j + 1] == close) { j += 2; continue; }
+                        break;
+                    }
+                    j++;
+                }
+                sb.Append(close == '\'' ? "''" : "x"); // literal stays a literal; identifier becomes a plain name
+                i = j + 1;
+                continue;
+            }
+            sb.Append(c);
+            i++;
+        }
+        code = sb.ToString();
         return true;
     }
 }

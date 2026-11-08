@@ -105,6 +105,8 @@ public sealed class SqlGuardTests
     [InlineData("  select name from sqlite_master where type='table';  ")]
     [InlineData("WITH t AS (SELECT 1 AS x) SELECT x FROM t")]
     [InlineData("SELECT 'delete me' AS note")]
+    [InlineData("SELECT \"delete\" FROM \"my;table\" -- drop it; later\n")]
+    [InlineData("SELECT [update] FROM t /* insert; */ WHERE x = 'a''b;c'")]
     public void AllowsSingleReadOnlyQueries(string sql)
         => Assert.True(SqlGuard.IsReadOnly(sql, out _));
 
@@ -115,6 +117,15 @@ public sealed class SqlGuardTests
     [InlineData("PRAGMA user_version = 3")]
     [InlineData("ATTACH DATABASE 'x' AS y")]
     [InlineData("")]
+    // Bypass attempts: quotes inside identifiers/comments must not hide a second statement.
+    [InlineData("SELECT \"x'\" ; DELETE FROM t; --'")]
+    [InlineData("SELECT [x'] ; DROP TABLE t; --'")]
+    [InlineData("SELECT `x'` ; DELETE FROM t; --'")]
+    [InlineData("SELECT 1 /* ' */ ; DELETE FROM t /* ' */")]
+    [InlineData("SELECT 1 -- '\n; DELETE FROM t")]
+    [InlineData("SELECT 'unterminated")]
+    [InlineData("SELECT \"unterminated")]
+    [InlineData("SELECT 1 /* unterminated")]
     public void RejectsWritesAndMultipleStatements(string sql)
     {
         Assert.False(SqlGuard.IsReadOnly(sql, out var e));

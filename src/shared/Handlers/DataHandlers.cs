@@ -415,10 +415,17 @@ public sealed class DbQueryHandler : DocumentCommand
         var rows = new List<JToken[]>();
         var conn = doc.Database.ToNavisworksConnection();
         if (conn.State != ConnectionState.Open) conn.Open();
+        // Defence in depth behind SqlGuard: run inside a transaction that is always rolled back, so even a write that
+        // slipped past the guard cannot persist. Fail closed when the query cannot be isolated.
+        System.Data.Common.DbTransaction tx;
+        try { tx = conn.BeginTransaction(); }
+        catch (Exception ex) { throw new CommandFailure("DB_BUSY", "the document database could not be isolated for a read-only query: " + ex.Message); }
         try
         {
+            using (tx)
             using (var cmd = conn.CreateCommand())
             {
+                cmd.Transaction = tx;
                 cmd.CommandText = sql;
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -434,6 +441,7 @@ public sealed class DbQueryHandler : DocumentCommand
                         rows.Add(row);
                     }
                 }
+                tx.Rollback(); // never keep anything; Dispose also rolls back on the error path
             }
         }
         catch (Exception ex) when (!(ex is CommandFailure))
